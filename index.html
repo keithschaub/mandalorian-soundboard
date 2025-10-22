@@ -357,6 +357,7 @@
                 this.sounds = {};
                 this.currentVolume = 0.8;
                 this.audioEnabled = false;
+                this.audioContext = null;
                 this.init();
             }
 
@@ -374,31 +375,36 @@
             }
 
             enableAudio() {
-                // Create and play a simple test sound to unlock audio
-                const testAudio = new Audio();
-                
-                // Create a simple beep as a data URL
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-                
-                // After a brief delay, set up the actual sounds
-                setTimeout(() => {
-                    this.preloadSounds();
-                    this.showSoundboard();
-                    this.audioEnabled = true;
-                }, 200);
+                try {
+                    // Create the AudioContext that we'll reuse for all sounds
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Play a test beep to unlock audio on iOS
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    
+                    // After a brief delay, set up the actual sounds
+                    setTimeout(() => {
+                        this.preloadSounds();
+                        this.showSoundboard();
+                        this.audioEnabled = true;
+                        console.log('Audio system enabled with single AudioContext');
+                    }, 200);
+                } catch (error) {
+                    console.error('Failed to enable audio:', error);
+                    alert('Audio initialization failed. Please try again.');
+                }
             }
 
             showSoundboard() {
@@ -484,23 +490,44 @@
 
             playBeep(frequency) {
                 try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(this.currentVolume * 0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.5);
+                    if (!this.audioContext) {
+                        console.error('AudioContext not initialized');
+                        return;
+                    }
+
+                    // Check if AudioContext is suspended (common on iOS)
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume().then(() => {
+                            this.createAndPlayOscillator(frequency);
+                        });
+                    } else {
+                        this.createAndPlayOscillator(frequency);
+                    }
                 } catch (error) {
                     console.error('Beep playback failed:', error);
+                }
+            }
+
+            createAndPlayOscillator(frequency) {
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(this.currentVolume * 0.3, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.5);
+                    
+                    console.log(`Played beep at ${frequency}Hz`);
+                } catch (error) {
+                    console.error('Oscillator creation failed:', error);
                 }
             }
 
