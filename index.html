@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard</title>
+    <title>Mandalorian Soundboard v2.1</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="manifest" href="manifest.json">
     <style>
         * {
@@ -256,10 +259,42 @@
             margin: 0;
             opacity: 0.8;
         }
+
+        /* Debug panel */
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #00FF41;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .debug-panel h3 {
+            margin: 0 0 10px 0;
+            color: #4A90E2;
+        }
+
+        .debug-panel button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v2.1</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -350,6 +385,12 @@
         <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
     </div>
 
+    <div id="debugPanel" class="debug-panel" style="display: none;">
+        <h3>🔧 DEBUG INFO</h3>
+        <div id="debugLog"></div>
+        <button onclick="document.getElementById('debugPanel').style.display='none'">Hide Debug</button>
+    </div>
+
     <script>
         // Simplified Audio management system
         class SoundBoard {
@@ -376,8 +417,12 @@
 
             enableAudio() {
                 try {
+                    this.debugLog = this.debugLog || console.log; // Fallback if debugLog not ready
+                    this.debugLog('Starting audio enable process...');
+                    
                     // Create the AudioContext that we'll reuse for all sounds
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.debugLog(`AudioContext created, state: ${this.audioContext.state}`);
                     
                     // Play a test beep to unlock audio on iOS
                     const oscillator = this.audioContext.createOscillator();
@@ -393,16 +438,18 @@
                     
                     oscillator.start(this.audioContext.currentTime);
                     oscillator.stop(this.audioContext.currentTime + 0.1);
+                    this.debugLog('Test beep played for iOS unlock');
                     
                     // After a brief delay, set up the actual sounds
                     setTimeout(() => {
                         this.preloadSounds();
                         this.showSoundboard();
                         this.audioEnabled = true;
-                        console.log('Audio system enabled with single AudioContext');
+                        this.debugLog(`Audio system enabled! State: ${this.audioContext.state}`);
                     }, 200);
                 } catch (error) {
                     console.error('Failed to enable audio:', error);
+                    this.debugLog(`ERROR: ${error.message}`);
                     alert('Audio initialization failed. Please try again.');
                 }
             }
@@ -412,6 +459,20 @@
                 document.getElementById('colorLegend').style.display = 'flex';
                 document.getElementById('soundGrid').style.display = 'grid';
                 document.getElementById('volumeControl').style.display = 'block';
+                document.getElementById('debugPanel').style.display = 'block';
+                this.debugLog('Soundboard UI shown');
+            }
+
+            debugLog(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] ${message}`;
+                console.log(logEntry);
+                
+                const debugLog = document.getElementById('debugLog');
+                if (debugLog) {
+                    debugLog.innerHTML += logEntry + '<br>';
+                    debugLog.scrollTop = debugLog.scrollHeight;
+                }
             }
 
             setupVolumeControl() {
@@ -424,10 +485,19 @@
 
             setupButtons() {
                 const buttons = document.querySelectorAll('.sound-btn');
+                console.log(`Setting up ${buttons.length} sound buttons`);
+                
                 buttons.forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
-                        if (!this.audioEnabled) return;
+                        console.log(`Button clicked: ${button.dataset.sound}`);
+                        console.log(`Audio enabled: ${this.audioEnabled}`);
+                        console.log(`AudioContext state: ${this.audioContext ? this.audioContext.state : 'null'}`);
+                        
+                        if (!this.audioEnabled) {
+                            console.log('Audio not enabled, ignoring click');
+                            return;
+                        }
                         const soundId = button.dataset.sound;
                         this.playSound(soundId, button);
                     });
@@ -468,7 +538,16 @@
             }
 
             playSound(soundId, buttonElement) {
-                if (!this.audioEnabled) return;
+                console.log(`=== PLAY SOUND START ===`);
+                console.log(`Sound ID: ${soundId}`);
+                console.log(`Audio enabled: ${this.audioEnabled}`);
+                console.log(`AudioContext: ${this.audioContext ? 'exists' : 'null'}`);
+                console.log(`AudioContext state: ${this.audioContext ? this.audioContext.state : 'N/A'}`);
+                
+                if (!this.audioEnabled) {
+                    console.log('Audio not enabled, exiting');
+                    return;
+                }
 
                 try {
                     // Visual feedback
@@ -479,9 +558,10 @@
 
                     // Play sound using Web Audio API (should work after user interaction)
                     const frequency = this.frequencies[soundId] || 440;
+                    console.log(`Attempting to play beep at ${frequency}Hz`);
                     this.playBeep(frequency);
                     
-                    console.log(`Playing sound: ${soundId} at ${frequency}Hz`);
+                    console.log(`=== PLAY SOUND END ===`);
                 } catch (error) {
                     console.error('Error playing sound:', error);
                     this.showError(buttonElement);
