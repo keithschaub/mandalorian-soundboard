@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandalorian Soundboard</title>
+    <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%);
+            color: #C0C0C0;
+            font-family: 'Arial Black', 'Arial', sans-serif;
+            padding: 15px;
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .app-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0 25px 0;
+            color: #4A90E2;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .sound-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            min-height: 100px;
+            border-radius: 20px;
+            border: 3px solid #4A90E2;
+            background: linear-gradient(145deg, #2D2D2D, #1A1A1A);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sound-btn:hover {
+            border-color: #5BA0F2;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .sound-btn:active {
+            transform: scale(0.95);
+            background: linear-gradient(145deg, #4A90E2, #357ABD);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .sound-btn.playing {
+            background: linear-gradient(145deg, #00FF41, #00CC33);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-emoji {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .btn-text {
+            font-size: 10px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Color variants */
+        .blue { border-color: #4A90E2; }
+        .green { border-color: #00FF41; }
+        .red { border-color: #FF4757; }
+        .yellow { border-color: #FFD700; }
+        .gray { border-color: #5A6C7D; }
+        .orange { border-color: #FF6B35; }
+
+        .volume-control {
+            text-align: center;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .volume-label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4A90E2;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #2D2D2D;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .sound-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .sound-btn {
+                min-height: 90px;
+            }
+            
+            .btn-text {
+                font-size: 9px;
+            }
+            
+            .app-title {
+                font-size: 28px;
+            }
+        }
+
+        /* Landscape mode */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .sound-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 8px;
+            }
+            
+            .sound-btn {
+                min-height: 70px;
+            }
+            
+            .btn-text {
+                font-size: 8px;
+            }
+            
+            .app-title {
+                font-size: 24px;
+                margin: 5px 0 15px 0;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Error state */
+        .error {
+            border-color: #FF4757;
+            background: linear-gradient(145deg, #FF4757, #CC3A47);
+        }
+
+        /* Color legend */
+        .color-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 20px auto;
+            max-width: 600px;
+        }
+
+        .legend-item {
+            font-size: 12px;
+            font-weight: bold;
+            color: #C0C0C0;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(45, 45, 45, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <h1 class="app-title">🪖 MANDALORIAN</h1>
+    
+    <div class="color-legend">
+        <div class="legend-item">🔵 MANDO</div>
+        <div class="legend-item">🟢 GROGU</div>
+        <div class="legend-item">🔴 ACTION</div>
+        <div class="legend-item">🟡 REPLIES</div>
+        <div class="legend-item">⚫ UTILITY</div>
+        <div class="legend-item">🟠 LORE</div>
+    </div>
+    
+    <div class="sound-grid" id="soundGrid">
+        <!-- BLUE = MANDO (Din Djarin's signature phrases) -->
+        <button class="sound-btn blue" data-sound="this-is-way">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">THIS IS<br>THE WAY</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="im-mando">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">I'M A<br>MANDO</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="fine">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">FINE</div>
+        </button>
+        
+        <!-- GREEN = GROGU (Baby Yoda sounds) -->
+        <button class="sound-btn green" data-sound="baby-yoda-coo">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">BABY<br>YODA COO</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="grogu-wave">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">GROGU<br>WAVE</div>
+        </button>
+        
+        <!-- RED = THREATS/ACTION (Combat/intimidation) -->
+        <button class="sound-btn red" data-sound="warm-cold">
+            <div class="btn-emoji">🔴</div>
+            <div class="btn-text">WARM OR<br>COLD</div>
+        </button>
+        
+        <button class="sound-btn red" data-sound="no-droids">
+            <div class="btn-emoji">🔴</div>
+            <div class="btn-text">NO<br>DROIDS</div>
+        </button>
+        
+        <!-- YELLOW = RESPONSES (Conversational replies) -->
+        <button class="sound-btn yellow" data-sound="great">
+            <div class="btn-emoji">🟡</div>
+            <div class="btn-text">GREAT</div>
+        </button>
+        
+        <button class="sound-btn yellow" data-sound="thank-you">
+            <div class="btn-emoji">🟡</div>
+            <div class="btn-text">THANK<br>YOU</div>
+        </button>
+        
+        <!-- GRAY = UTILITY (Simple acknowledgments) -->
+        <button class="sound-btn gray" data-sound="alright">
+            <div class="btn-emoji">⚫</div>
+            <div class="btn-text">ALRIGHT</div>
+        </button>
+        
+        <button class="sound-btn gray" data-sound="hey">
+            <div class="btn-emoji">⚫</div>
+            <div class="btn-text">HEY!</div>
+        </button>
+        
+        <!-- ORANGE = TECHNICAL/LORE (Mandalorian culture/gear) -->
+        <button class="sound-btn orange" data-sound="beskar">
+            <div class="btn-emoji">🟠</div>
+            <div class="btn-text">BESKAR</div>
+        </button>
+    </div>
+    
+    <div class="volume-control">
+        <div class="volume-label">🔊 VOLUME</div>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+    </div>
+
+    <script>
+        // Audio management system
+        class SoundBoard {
+            constructor() {
+                this.sounds = {};
+                this.currentVolume = 0.8;
+                this.isLoading = true;
+                this.init();
+            }
+
+            init() {
+                this.setupVolumeControl();
+                this.setupButtons();
+                this.preloadSounds();
+            }
+
+            setupVolumeControl() {
+                const volumeSlider = document.getElementById('volumeSlider');
+                volumeSlider.addEventListener('input', (e) => {
+                    this.currentVolume = e.target.value / 100;
+                    this.updateAllVolumes();
+                });
+            }
+
+            setupButtons() {
+                const buttons = document.querySelectorAll('.sound-btn');
+                buttons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const soundId = button.dataset.sound;
+                        this.playSound(soundId, button);
+                    });
+
+                    // Add touch feedback
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        button.style.transform = 'scale(0.95)';
+                    });
+
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        button.style.transform = 'scale(1)';
+                    });
+                });
+            }
+
+            preloadSounds() {
+                // For now, we'll create placeholder sounds using Web Audio API
+                // In production, you would load actual audio files
+                const soundList = [
+                    'this-is-way', 'baby-yoda-coo', 'warm-cold', 'im-mando',
+                    'no-droids', 'beskar', 'fine', 'grogu-wave',
+                    'alright', 'great', 'hey', 'thank-you'
+                ];
+
+                soundList.forEach(soundId => {
+                    // Create placeholder audio (beep sounds for testing)
+                    this.sounds[soundId] = this.createTestSound(soundId);
+                });
+
+                this.isLoading = false;
+                document.body.classList.remove('loading');
+            }
+
+            createTestSound(soundId) {
+                // Create a simple beep sound for testing
+                // This will be replaced with actual audio files
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                return {
+                    play: () => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        // Different frequencies for different sounds
+                        const frequencies = {
+                            'this-is-way': 440,
+                            'baby-yoda-coo': 880,
+                            'warm-cold': 220,
+                            'im-mando': 330,
+                            'no-droids': 165,
+                            'beskar': 550,
+                            'fine': 660,
+                            'grogu-wave': 770,
+                            'alright': 275,
+                            'great': 385,
+                            'hey': 495,
+                            'thank-you': 605
+                        };
+                        
+                        oscillator.frequency.setValueAtTime(frequencies[soundId] || 440, audioContext.currentTime);
+                        oscillator.type = 'sine';
+                        
+                        gainNode.gain.setValueAtTime(this.currentVolume * 0.3, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.5);
+                    }
+                };
+            }
+
+            playSound(soundId, buttonElement) {
+                if (this.isLoading) return;
+
+                try {
+                    // Visual feedback
+                    buttonElement.classList.add('playing');
+                    setTimeout(() => {
+                        buttonElement.classList.remove('playing');
+                    }, 500);
+
+                    // Play sound
+                    if (this.sounds[soundId]) {
+                        this.sounds[soundId].play();
+                    } else {
+                        console.warn(`Sound ${soundId} not found`);
+                        this.showError(buttonElement);
+                    }
+                } catch (error) {
+                    console.error('Error playing sound:', error);
+                    this.showError(buttonElement);
+                }
+            }
+
+            updateAllVolumes() {
+                // This would update volume for all audio elements
+                // Currently handled per-sound in createTestSound
+            }
+
+            showError(buttonElement) {
+                buttonElement.classList.add('error');
+                setTimeout(() => {
+                    buttonElement.classList.remove('error');
+                }, 1000);
+            }
+        }
+
+        // Initialize the soundboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('loading');
+            new SoundBoard();
+        });
+
+        // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Service Worker registration for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
