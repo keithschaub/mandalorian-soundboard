@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v2.1</title>
+    <title>Mandalorian Soundboard v3.0</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -39,21 +39,22 @@
 
         .sound-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            max-width: 600px;
-            margin: 0 auto 30px auto;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 100%;
+            margin: 0 auto 20px auto;
+            padding: 0 10px;
         }
 
         .sound-btn {
             width: 100%;
             aspect-ratio: 1;
-            min-height: 100px;
-            border-radius: 20px;
-            border: 3px solid #4A90E2;
+            min-height: 70px;
+            border-radius: 15px;
+            border: 2px solid #4A90E2;
             background: linear-gradient(145deg, #2D2D2D, #1A1A1A);
             color: white;
-            font-size: 12px;
+            font-size: 9px;
             font-weight: bold;
             text-align: center;
             cursor: pointer;
@@ -62,7 +63,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
             position: relative;
             overflow: hidden;
         }
@@ -90,15 +91,15 @@
         }
 
         .btn-emoji {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 3px;
         }
 
         .btn-text {
-            font-size: 10px;
-            line-height: 1.1;
+            font-size: 8px;
+            line-height: 1.0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         /* Color variants */
@@ -152,41 +153,41 @@
         /* Mobile optimizations */
         @media (max-width: 480px) {
             .sound-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
             }
             
             .sound-btn {
-                min-height: 90px;
+                min-height: 65px;
             }
             
             .btn-text {
-                font-size: 9px;
+                font-size: 7px;
             }
             
             .app-title {
-                font-size: 28px;
+                font-size: 24px;
             }
         }
 
         /* Landscape mode */
         @media (orientation: landscape) and (max-height: 500px) {
             .sound-grid {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 8px;
+                grid-template-columns: repeat(10, 1fr);
+                gap: 4px;
             }
             
             .sound-btn {
-                min-height: 70px;
+                min-height: 50px;
             }
             
             .btn-text {
-                font-size: 8px;
+                font-size: 6px;
             }
             
             .app-title {
-                font-size: 24px;
-                margin: 5px 0 15px 0;
+                font-size: 20px;
+                margin: 5px 0 10px 0;
             }
         }
 
@@ -294,7 +295,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v2.1</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v3.0</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -306,77 +307,111 @@
     <div class="color-legend" id="colorLegend" style="display: none;">
         <div class="legend-item">🔵 MANDO</div>
         <div class="legend-item">🟢 GROGU</div>
-        <div class="legend-item">🔴 ACTION</div>
-        <div class="legend-item">🟡 REPLIES</div>
-        <div class="legend-item">⚫ UTILITY</div>
-        <div class="legend-item">🟠 LORE</div>
+        <div class="legend-item">🟠 THEMES</div>
     </div>
     
     <div class="sound-grid" id="soundGrid" style="display: none;">
-        <!-- BLUE = MANDO (Din Djarin's signature phrases) -->
-        <button class="sound-btn blue" data-sound="this-is-way">
+        <!-- ORANGE = THEMES (Music) -->
+        <button class="sound-btn orange" data-sound="Mando Theme">
+            <div class="btn-emoji">🟠</div>
+            <div class="btn-text">MANDO<br>THEME</div>
+        </button>
+        
+        <button class="sound-btn orange" data-sound="Mando Flute">
+            <div class="btn-emoji">🟠</div>
+            <div class="btn-text">MANDO<br>FLUTE</div>
+        </button>
+        
+        <!-- BLUE = MANDO (Din Djarin speaking) -->
+        <button class="sound-btn blue" data-sound="This is the way">
             <div class="btn-emoji">🔵</div>
             <div class="btn-text">THIS IS<br>THE WAY</div>
         </button>
         
-        <button class="sound-btn blue" data-sound="im-mando">
+        <button class="sound-btn blue" data-sound="I'm a Mandalorian">
             <div class="btn-emoji">🔵</div>
             <div class="btn-text">I'M A<br>MANDO</div>
         </button>
         
-        <button class="sound-btn blue" data-sound="fine">
+        <button class="sound-btn blue" data-sound="No droids">
             <div class="btn-emoji">🔵</div>
-            <div class="btn-text">FINE</div>
-        </button>
-        
-        <!-- GREEN = GROGU (Baby Yoda sounds) -->
-        <button class="sound-btn green" data-sound="baby-yoda-coo">
-            <div class="btn-emoji">🟢</div>
-            <div class="btn-text">BABY<br>YODA COO</div>
-        </button>
-        
-        <button class="sound-btn green" data-sound="grogu-wave">
-            <div class="btn-emoji">🟢</div>
-            <div class="btn-text">GROGU<br>WAVE</div>
-        </button>
-        
-        <!-- RED = THREATS/ACTION (Combat/intimidation) -->
-        <button class="sound-btn red" data-sound="warm-cold">
-            <div class="btn-emoji">🔴</div>
-            <div class="btn-text">WARM OR<br>COLD</div>
-        </button>
-        
-        <button class="sound-btn red" data-sound="no-droids">
-            <div class="btn-emoji">🔴</div>
             <div class="btn-text">NO<br>DROIDS</div>
         </button>
         
-        <!-- YELLOW = RESPONSES (Conversational replies) -->
-        <button class="sound-btn yellow" data-sound="great">
-            <div class="btn-emoji">🟡</div>
+        <button class="sound-btn blue" data-sound="Great">
+            <div class="btn-emoji">🔵</div>
             <div class="btn-text">GREAT</div>
         </button>
         
-        <button class="sound-btn yellow" data-sound="thank-you">
-            <div class="btn-emoji">🟡</div>
+        <button class="sound-btn blue" data-sound="Thank you">
+            <div class="btn-emoji">🔵</div>
             <div class="btn-text">THANK<br>YOU</div>
         </button>
         
-        <!-- GRAY = UTILITY (Simple acknowledgments) -->
-        <button class="sound-btn gray" data-sound="alright">
-            <div class="btn-emoji">⚫</div>
-            <div class="btn-text">ALRIGHT</div>
+        <button class="sound-btn blue" data-sound="Yes">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">YES</div>
         </button>
         
-        <button class="sound-btn gray" data-sound="hey">
-            <div class="btn-emoji">⚫</div>
-            <div class="btn-text">HEY!</div>
+        <button class="sound-btn blue" data-sound="Don't touch anything">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">DON'T<br>TOUCH</div>
         </button>
         
-        <!-- ORANGE = TECHNICAL/LORE (Mandalorian culture/gear) -->
-        <button class="sound-btn orange" data-sound="beskar">
-            <div class="btn-emoji">🟠</div>
-            <div class="btn-text">BESKAR</div>
+        <button class="sound-btn blue" data-sound="Do not self destruct">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">NO SELF<br>DESTRUCT</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="I could use a crew">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">NEED<br>CREW</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="I don't belong here">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">DON'T<br>BELONG</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Where do you live">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">WHERE<br>LIVE?</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Why so slow">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">WHY SO<br>SLOW?</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="You want some soup">
+            <div class="btn-emoji">🔵</div>
+            <div class="btn-text">WANT<br>SOUP?</div>
+        </button>
+        
+        <!-- GREEN = GROGU (Baby Yoda sounds) -->
+        <button class="sound-btn green" data-sound="Grogu Cooing">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">GROGU<br>COO</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu giggling">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">GROGU<br>GIGGLE</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu YES">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">GROGU<br>YES</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu NO">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">GROGU<br>NO</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu bad baby">
+            <div class="btn-emoji">🟢</div>
+            <div class="btn-text">BAD<br>BABY</div>
         </button>
     </div>
     
@@ -420,24 +455,25 @@
                     this.debugLog = this.debugLog || console.log; // Fallback if debugLog not ready
                     this.debugLog('Starting audio enable process...');
                     
-                    // Create the AudioContext that we'll reuse for all sounds
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.debugLog(`AudioContext created, state: ${this.audioContext.state}`);
+                    // Create a simple test audio to unlock iOS audio
+                    const testAudio = new Audio();
+                    testAudio.volume = 0.1;
                     
-                    // Play a test beep to unlock audio on iOS
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
+                    // Create a minimal audio data URL for the test beep
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
                     
                     oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
+                    gainNode.connect(audioContext.destination);
                     
-                    oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
                     oscillator.type = 'sine';
-                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
                     
-                    oscillator.start(this.audioContext.currentTime);
-                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
                     this.debugLog('Test beep played for iOS unlock');
                     
                     // After a brief delay, set up the actual sounds
@@ -445,7 +481,7 @@
                         this.preloadSounds();
                         this.showSoundboard();
                         this.audioEnabled = true;
-                        this.debugLog(`Audio system enabled! State: ${this.audioContext.state}`);
+                        this.debugLog('Audio system enabled with real audio files!');
                     }, 200);
                 } catch (error) {
                     console.error('Failed to enable audio:', error);
@@ -527,36 +563,41 @@
             }
 
             preloadSounds() {
-                // Create simple beep sounds with different frequencies
-                const frequencies = {
-                    'this-is-way': 440,
-                    'baby-yoda-coo': 880,
-                    'warm-cold': 220,
-                    'im-mando': 330,
-                    'no-droids': 165,
-                    'beskar': 550,
-                    'fine': 660,
-                    'grogu-wave': 770,
-                    'alright': 275,
-                    'great': 385,
-                    'hey': 495,
-                    'thank-you': 605
-                };
+                // Create Audio objects for all 20 sound files
+                const soundFiles = [
+                    'Mando Theme', 'Mando Flute', 'This is the way', "I'm a Mandalorian",
+                    'No droids', 'Great', 'Thank you', 'Yes', "Don't touch anything",
+                    'Do not self destruct', 'I could use a crew', "I don't belong here",
+                    'Where do you live', 'Why so slow', 'You want some soup',
+                    'Grogu Cooing', 'Grogu giggling', 'Grogu YES', 'Grogu NO', 'Grogu bad baby'
+                ];
 
-                // Store frequencies for Web Audio API playback
-                this.frequencies = frequencies;
-                console.log('Audio system ready');
+                soundFiles.forEach(soundId => {
+                    const audio = new Audio(`Sounds/${soundId}.mp3`);
+                    audio.preload = 'auto';
+                    audio.volume = this.currentVolume;
+                    this.sounds[soundId] = audio;
+                    
+                    // Add error handling
+                    audio.addEventListener('error', (e) => {
+                        this.debugLog(`❌ Failed to load: ${soundId}.mp3`);
+                    });
+                    
+                    audio.addEventListener('canplaythrough', (e) => {
+                        this.debugLog(`✅ Loaded: ${soundId}.mp3`);
+                    });
+                });
+
+                this.debugLog(`Preloading ${soundFiles.length} audio files...`);
             }
 
             playSound(soundId, buttonElement) {
-                console.log(`=== PLAY SOUND START ===`);
-                console.log(`Sound ID: ${soundId}`);
-                console.log(`Audio enabled: ${this.audioEnabled}`);
-                console.log(`AudioContext: ${this.audioContext ? 'exists' : 'null'}`);
-                console.log(`AudioContext state: ${this.audioContext ? this.audioContext.state : 'N/A'}`);
+                this.debugLog(`=== PLAY SOUND START ===`);
+                this.debugLog(`Sound ID: ${soundId}`);
+                this.debugLog(`Audio enabled: ${this.audioEnabled}`);
                 
                 if (!this.audioEnabled) {
-                    console.log('Audio not enabled, exiting');
+                    this.debugLog('❌ Audio not enabled, exiting');
                     return;
                 }
 
@@ -567,77 +608,44 @@
                         buttonElement.classList.remove('playing');
                     }, 500);
 
-                    // Play sound using Web Audio API (should work after user interaction)
-                    const frequency = this.frequencies[soundId] || 440;
-                    console.log(`Attempting to play beep at ${frequency}Hz`);
-                    this.playBeep(frequency);
+                    // Play real audio file
+                    if (this.sounds[soundId]) {
+                        const audio = this.sounds[soundId];
+                        audio.volume = this.currentVolume;
+                        audio.currentTime = 0; // Reset to start
+                        
+                        this.debugLog(`🎵 Playing: ${soundId}.mp3`);
+                        
+                        const playPromise = audio.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                this.debugLog(`✅ Successfully playing: ${soundId}`);
+                            }).catch(error => {
+                                this.debugLog(`❌ Play failed: ${error.message}`);
+                                this.showError(buttonElement);
+                            });
+                        }
+                    } else {
+                        this.debugLog(`❌ Sound not found: ${soundId}`);
+                        this.showError(buttonElement);
+                    }
                     
-                    console.log(`=== PLAY SOUND END ===`);
+                    this.debugLog(`=== PLAY SOUND END ===`);
                 } catch (error) {
-                    console.error('Error playing sound:', error);
+                    this.debugLog(`❌ Error playing sound: ${error.message}`);
                     this.showError(buttonElement);
                 }
             }
 
-            playBeep(frequency) {
-                try {
-                    this.debugLog(`🔊 playBeep called with ${frequency}Hz`);
-                    
-                    if (!this.audioContext) {
-                        this.debugLog('❌ AudioContext not initialized');
-                        return;
-                    }
-
-                    this.debugLog(`AudioContext state: ${this.audioContext.state}`);
-
-                    // Check if AudioContext is suspended (common on iOS)
-                    if (this.audioContext.state === 'suspended') {
-                        this.debugLog('⏸️ AudioContext suspended, attempting resume...');
-                        this.audioContext.resume().then(() => {
-                            this.debugLog('▶️ AudioContext resumed');
-                            this.createAndPlayOscillator(frequency);
-                        }).catch(error => {
-                            this.debugLog(`❌ Resume failed: ${error.message}`);
-                        });
-                    } else {
-                        this.debugLog('▶️ AudioContext ready, creating oscillator');
-                        this.createAndPlayOscillator(frequency);
-                    }
-                } catch (error) {
-                    this.debugLog(`❌ playBeep error: ${error.message}`);
-                }
-            }
-
-            createAndPlayOscillator(frequency) {
-                try {
-                    this.debugLog(`🎵 Creating oscillator for ${frequency}Hz`);
-                    
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-                    oscillator.type = 'sine';
-                    
-                    const volume = this.currentVolume * 0.3;
-                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
-                    
-                    this.debugLog(`🎶 Starting oscillator (volume: ${volume})`);
-                    oscillator.start(this.audioContext.currentTime);
-                    oscillator.stop(this.audioContext.currentTime + 0.5);
-                    
-                    this.debugLog(`✅ Oscillator started successfully!`);
-                } catch (error) {
-                    this.debugLog(`❌ Oscillator error: ${error.message}`);
-                }
-            }
 
             updateAllVolumes() {
-                // Volume is handled per-beep in playBeep method
-                console.log(`Volume updated to: ${this.currentVolume}`);
+                // Update volume for all audio elements
+                Object.values(this.sounds).forEach(audio => {
+                    if (audio && typeof audio.volume !== 'undefined') {
+                        audio.volume = this.currentVolume;
+                    }
+                });
+                this.debugLog(`Volume updated to: ${this.currentVolume}`);
             }
 
             showError(buttonElement) {
