@@ -490,26 +490,28 @@
                 buttons.forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
-                        console.log(`Button clicked: ${button.dataset.sound}`);
-                        console.log(`Audio enabled: ${this.audioEnabled}`);
-                        console.log(`AudioContext state: ${this.audioContext ? this.audioContext.state : 'null'}`);
+                        this.debugLog(`🖱️ BUTTON CLICKED: ${button.dataset.sound}`);
+                        this.debugLog(`Audio enabled: ${this.audioEnabled}`);
+                        this.debugLog(`AudioContext state: ${this.audioContext ? this.audioContext.state : 'null'}`);
                         
                         if (!this.audioEnabled) {
-                            console.log('Audio not enabled, ignoring click');
+                            this.debugLog('❌ Audio not enabled, ignoring click');
                             return;
                         }
                         const soundId = button.dataset.sound;
                         this.playSound(soundId, button);
                     });
 
-                    // Add touch feedback
+                    // Add touch feedback and debugging
                     button.addEventListener('touchstart', (e) => {
                         e.preventDefault();
+                        this.debugLog(`👆 TOUCH START: ${button.dataset.sound}`);
                         button.style.transform = 'scale(0.95)';
                     });
 
                     button.addEventListener('touchend', (e) => {
                         e.preventDefault();
+                        this.debugLog(`👆 TOUCH END: ${button.dataset.sound}`);
                         button.style.transform = 'scale(1)';
                     });
                 });
@@ -570,26 +572,37 @@
 
             playBeep(frequency) {
                 try {
+                    this.debugLog(`🔊 playBeep called with ${frequency}Hz`);
+                    
                     if (!this.audioContext) {
-                        console.error('AudioContext not initialized');
+                        this.debugLog('❌ AudioContext not initialized');
                         return;
                     }
 
+                    this.debugLog(`AudioContext state: ${this.audioContext.state}`);
+
                     // Check if AudioContext is suspended (common on iOS)
                     if (this.audioContext.state === 'suspended') {
+                        this.debugLog('⏸️ AudioContext suspended, attempting resume...');
                         this.audioContext.resume().then(() => {
+                            this.debugLog('▶️ AudioContext resumed');
                             this.createAndPlayOscillator(frequency);
+                        }).catch(error => {
+                            this.debugLog(`❌ Resume failed: ${error.message}`);
                         });
                     } else {
+                        this.debugLog('▶️ AudioContext ready, creating oscillator');
                         this.createAndPlayOscillator(frequency);
                     }
                 } catch (error) {
-                    console.error('Beep playback failed:', error);
+                    this.debugLog(`❌ playBeep error: ${error.message}`);
                 }
             }
 
             createAndPlayOscillator(frequency) {
                 try {
+                    this.debugLog(`🎵 Creating oscillator for ${frequency}Hz`);
+                    
                     const oscillator = this.audioContext.createOscillator();
                     const gainNode = this.audioContext.createGain();
                     
@@ -599,15 +612,17 @@
                     oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
                     oscillator.type = 'sine';
                     
-                    gainNode.gain.setValueAtTime(this.currentVolume * 0.3, this.audioContext.currentTime);
+                    const volume = this.currentVolume * 0.3;
+                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
                     
+                    this.debugLog(`🎶 Starting oscillator (volume: ${volume})`);
                     oscillator.start(this.audioContext.currentTime);
                     oscillator.stop(this.audioContext.currentTime + 0.5);
                     
-                    console.log(`Played beep at ${frequency}Hz`);
+                    this.debugLog(`✅ Oscillator started successfully!`);
                 } catch (error) {
-                    console.error('Oscillator creation failed:', error);
+                    this.debugLog(`❌ Oscillator error: ${error.message}`);
                 }
             }
 
