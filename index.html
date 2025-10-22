@@ -502,7 +502,7 @@
                         this.playSound(soundId, button);
                     });
 
-                    // Add touch feedback and debugging
+                    // Add touch feedback and direct sound triggering for iOS
                     button.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         this.debugLog(`👆 TOUCH START: ${button.dataset.sound}`);
@@ -513,6 +513,15 @@
                         e.preventDefault();
                         this.debugLog(`👆 TOUCH END: ${button.dataset.sound}`);
                         button.style.transform = 'scale(1)';
+                        
+                        // Trigger sound directly on touch end (iOS Safari fix)
+                        if (this.audioEnabled) {
+                            this.debugLog(`🎵 TRIGGERING SOUND FROM TOUCH: ${button.dataset.sound}`);
+                            const soundId = button.dataset.sound;
+                            this.playSound(soundId, button);
+                        } else {
+                            this.debugLog('❌ Audio not enabled for touch event');
+                        }
                     });
                 });
             }
