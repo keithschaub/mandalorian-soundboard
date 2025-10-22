@@ -432,26 +432,29 @@
             }
 
             initializeAudioContext() {
-                // Handle iOS audio unlock
+                // Handle iOS audio unlock - much simpler approach
+                this.audioUnlocked = false;
+                
                 const unlockAudio = () => {
-                    // Play a silent sound to unlock audio
-                    Object.values(this.sounds).forEach(audio => {
-                        if (audio && audio.play) {
-                            audio.volume = 0;
-                            const playPromise = audio.play();
-                            if (playPromise) {
-                                playPromise.then(() => {
-                                    audio.pause();
-                                    audio.currentTime = 0;
-                                    audio.volume = this.currentVolume;
-                                }).catch(() => {});
-                            }
-                        }
-                    });
+                    if (this.audioUnlocked) return;
                     
-                    // Remove the event listeners
-                    document.removeEventListener('touchstart', unlockAudio);
-                    document.removeEventListener('click', unlockAudio);
+                    // Just unlock one audio element silently
+                    const firstAudio = Object.values(this.sounds)[0];
+                    if (firstAudio && firstAudio.play) {
+                        firstAudio.volume = 0;
+                        const playPromise = firstAudio.play();
+                        if (playPromise) {
+                            playPromise.then(() => {
+                                firstAudio.pause();
+                                firstAudio.currentTime = 0;
+                                firstAudio.volume = this.currentVolume;
+                                this.audioUnlocked = true;
+                                console.log('Audio unlocked for iOS');
+                            }).catch(() => {
+                                console.log('Audio unlock failed');
+                            });
+                        }
+                    }
                 };
                 
                 // Add event listeners for first user interaction
@@ -472,13 +475,22 @@
                     // Play sound
                     if (this.sounds[soundId]) {
                         const audio = this.sounds[soundId];
+                        
+                        // Stop any currently playing instance
+                        audio.pause();
+                        audio.currentTime = 0;
                         audio.volume = this.currentVolume;
-                        audio.currentTime = 0; // Reset to start
                         
                         const playPromise = audio.play();
                         if (playPromise !== undefined) {
-                            playPromise.catch(error => {
+                            playPromise.then(() => {
+                                console.log(`Playing sound: ${soundId}`);
+                            }).catch(error => {
                                 console.warn('Audio play failed:', error);
+                                // Try to unlock audio if it hasn't been unlocked yet
+                                if (!this.audioUnlocked) {
+                                    this.forceAudioUnlock();
+                                }
                                 this.showError(buttonElement);
                             });
                         }
@@ -489,6 +501,25 @@
                 } catch (error) {
                     console.error('Error playing sound:', error);
                     this.showError(buttonElement);
+                }
+            }
+
+            forceAudioUnlock() {
+                // Force audio unlock if it failed the first time
+                const firstAudio = Object.values(this.sounds)[0];
+                if (firstAudio) {
+                    firstAudio.volume = 0.1;
+                    const playPromise = firstAudio.play();
+                    if (playPromise) {
+                        playPromise.then(() => {
+                            firstAudio.pause();
+                            firstAudio.currentTime = 0;
+                            this.audioUnlocked = true;
+                            console.log('Audio force-unlocked');
+                        }).catch(() => {
+                            console.log('Force unlock also failed');
+                        });
+                    }
                 }
             }
 
