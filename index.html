@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v3.0</title>
+    <title>Mandalorian Soundboard v3.1</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v3.0</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v3.1</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -434,6 +434,7 @@
                 this.currentVolume = 0.8;
                 this.audioEnabled = false;
                 this.audioContext = null;
+                this.currentlyPlaying = null; // Track currently playing audio
                 this.init();
             }
 
@@ -602,6 +603,9 @@
                 }
 
                 try {
+                    // Stop any currently playing sound first
+                    this.stopCurrentSound();
+
                     // Visual feedback
                     buttonElement.classList.add('playing');
                     setTimeout(() => {
@@ -614,6 +618,9 @@
                         audio.volume = this.currentVolume;
                         audio.currentTime = 0; // Reset to start
                         
+                        // Track this as the currently playing sound
+                        this.currentlyPlaying = audio;
+                        
                         this.debugLog(`🎵 Playing: ${soundId}.mp3`);
                         
                         const playPromise = audio.play();
@@ -622,9 +629,19 @@
                                 this.debugLog(`✅ Successfully playing: ${soundId}`);
                             }).catch(error => {
                                 this.debugLog(`❌ Play failed: ${error.message}`);
+                                this.currentlyPlaying = null; // Clear on error
                                 this.showError(buttonElement);
                             });
                         }
+
+                        // Clear currentlyPlaying when sound ends naturally
+                        audio.addEventListener('ended', () => {
+                            if (this.currentlyPlaying === audio) {
+                                this.currentlyPlaying = null;
+                                this.debugLog(`🔇 Sound ended: ${soundId}`);
+                            }
+                        });
+
                     } else {
                         this.debugLog(`❌ Sound not found: ${soundId}`);
                         this.showError(buttonElement);
@@ -634,6 +651,15 @@
                 } catch (error) {
                     this.debugLog(`❌ Error playing sound: ${error.message}`);
                     this.showError(buttonElement);
+                }
+            }
+
+            stopCurrentSound() {
+                if (this.currentlyPlaying) {
+                    this.debugLog(`⏹️ Stopping currently playing sound`);
+                    this.currentlyPlaying.pause();
+                    this.currentlyPlaying.currentTime = 0;
+                    this.currentlyPlaying = null;
                 }
             }
 
