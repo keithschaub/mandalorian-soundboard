@@ -217,12 +217,58 @@
             border-radius: 8px;
             background: rgba(45, 45, 45, 0.5);
         }
+
+        /* Audio enable section */
+        .audio-enable-section {
+            text-align: center;
+            margin: 40px auto;
+            max-width: 400px;
+        }
+
+        .enable-audio-btn {
+            background: linear-gradient(145deg, #4A90E2, #357ABD);
+            border: 3px solid #4A90E2;
+            border-radius: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 20px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .enable-audio-btn:hover {
+            background: linear-gradient(145deg, #5BA0F2, #4A90E2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .enable-audio-btn:active {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .audio-help {
+            color: #C0C0C0;
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <h1 class="app-title">🪖 MANDALORIAN</h1>
     
-    <div class="color-legend">
+    <div id="audioEnableSection" class="audio-enable-section">
+        <button id="enableAudioBtn" class="enable-audio-btn">
+            🔊 ENABLE AUDIO
+        </button>
+        <p class="audio-help">Tap to enable sounds on your device</p>
+    </div>
+    
+    <div class="color-legend" id="colorLegend" style="display: none;">
         <div class="legend-item">🔵 MANDO</div>
         <div class="legend-item">🟢 GROGU</div>
         <div class="legend-item">🔴 ACTION</div>
@@ -231,7 +277,7 @@
         <div class="legend-item">🟠 LORE</div>
     </div>
     
-    <div class="sound-grid" id="soundGrid">
+    <div class="sound-grid" id="soundGrid" style="display: none;">
         <!-- BLUE = MANDO (Din Djarin's signature phrases) -->
         <button class="sound-btn blue" data-sound="this-is-way">
             <div class="btn-emoji">🔵</div>
@@ -299,25 +345,67 @@
         </button>
     </div>
     
-    <div class="volume-control">
+    <div class="volume-control" id="volumeControl" style="display: none;">
         <div class="volume-label">🔊 VOLUME</div>
         <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
     </div>
 
     <script>
-        // Audio management system
+        // Simplified Audio management system
         class SoundBoard {
             constructor() {
                 this.sounds = {};
                 this.currentVolume = 0.8;
-                this.isLoading = true;
+                this.audioEnabled = false;
                 this.init();
             }
 
             init() {
+                this.setupEnableAudioButton();
                 this.setupVolumeControl();
                 this.setupButtons();
-                this.preloadSounds();
+            }
+
+            setupEnableAudioButton() {
+                const enableBtn = document.getElementById('enableAudioBtn');
+                enableBtn.addEventListener('click', () => {
+                    this.enableAudio();
+                });
+            }
+
+            enableAudio() {
+                // Create and play a simple test sound to unlock audio
+                const testAudio = new Audio();
+                
+                // Create a simple beep as a data URL
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+                
+                // After a brief delay, set up the actual sounds
+                setTimeout(() => {
+                    this.preloadSounds();
+                    this.showSoundboard();
+                    this.audioEnabled = true;
+                }, 200);
+            }
+
+            showSoundboard() {
+                document.getElementById('audioEnableSection').style.display = 'none';
+                document.getElementById('colorLegend').style.display = 'flex';
+                document.getElementById('soundGrid').style.display = 'grid';
+                document.getElementById('volumeControl').style.display = 'block';
             }
 
             setupVolumeControl() {
@@ -333,6 +421,7 @@
                 buttons.forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
+                        if (!this.audioEnabled) return;
                         const soundId = button.dataset.sound;
                         this.playSound(soundId, button);
                     });
@@ -351,26 +440,7 @@
             }
 
             preloadSounds() {
-                // Create simple test sounds using HTML5 Audio (better mobile support)
-                const soundList = [
-                    'this-is-way', 'baby-yoda-coo', 'warm-cold', 'im-mando',
-                    'no-droids', 'beskar', 'fine', 'grogu-wave',
-                    'alright', 'great', 'hey', 'thank-you'
-                ];
-
-                soundList.forEach(soundId => {
-                    this.sounds[soundId] = this.createTestSound(soundId);
-                });
-
-                // Initialize audio context on first user interaction
-                this.initializeAudioContext();
-
-                this.isLoading = false;
-                document.body.classList.remove('loading');
-            }
-
-            createTestSound(soundId) {
-                // Create a data URL for a simple beep sound (better mobile compatibility)
+                // Create simple beep sounds with different frequencies
                 const frequencies = {
                     'this-is-way': 440,
                     'baby-yoda-coo': 880,
@@ -386,84 +456,13 @@
                     'thank-you': 605
                 };
 
-                // Create a simple audio element with a data URL
-                const audio = new Audio();
-                audio.preload = 'auto';
-                
-                // Generate a simple beep tone as base64 data
-                const freq = frequencies[soundId] || 440;
-                const duration = 0.5;
-                const sampleRate = 8000;
-                const samples = duration * sampleRate;
-                const buffer = new ArrayBuffer(44 + samples * 2);
-                const view = new DataView(buffer);
-                
-                // WAV header
-                const writeString = (offset, string) => {
-                    for (let i = 0; i < string.length; i++) {
-                        view.setUint8(offset + i, string.charCodeAt(i));
-                    }
-                };
-                
-                writeString(0, 'RIFF');
-                view.setUint32(4, 36 + samples * 2, true);
-                writeString(8, 'WAVE');
-                writeString(12, 'fmt ');
-                view.setUint32(16, 16, true);
-                view.setUint16(20, 1, true);
-                view.setUint16(22, 1, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, sampleRate * 2, true);
-                view.setUint16(32, 2, true);
-                view.setUint16(34, 16, true);
-                writeString(36, 'data');
-                view.setUint32(40, samples * 2, true);
-                
-                // Generate sine wave
-                for (let i = 0; i < samples; i++) {
-                    const sample = Math.sin(2 * Math.PI * freq * i / sampleRate) * 0.3;
-                    view.setInt16(44 + i * 2, sample * 32767, true);
-                }
-                
-                const blob = new Blob([buffer], { type: 'audio/wav' });
-                audio.src = URL.createObjectURL(blob);
-                
-                return audio;
-            }
-
-            initializeAudioContext() {
-                // Handle iOS audio unlock - much simpler approach
-                this.audioUnlocked = false;
-                
-                const unlockAudio = () => {
-                    if (this.audioUnlocked) return;
-                    
-                    // Just unlock one audio element silently
-                    const firstAudio = Object.values(this.sounds)[0];
-                    if (firstAudio && firstAudio.play) {
-                        firstAudio.volume = 0;
-                        const playPromise = firstAudio.play();
-                        if (playPromise) {
-                            playPromise.then(() => {
-                                firstAudio.pause();
-                                firstAudio.currentTime = 0;
-                                firstAudio.volume = this.currentVolume;
-                                this.audioUnlocked = true;
-                                console.log('Audio unlocked for iOS');
-                            }).catch(() => {
-                                console.log('Audio unlock failed');
-                            });
-                        }
-                    }
-                };
-                
-                // Add event listeners for first user interaction
-                document.addEventListener('touchstart', unlockAudio, { once: true });
-                document.addEventListener('click', unlockAudio, { once: true });
+                // Store frequencies for Web Audio API playback
+                this.frequencies = frequencies;
+                console.log('Audio system ready');
             }
 
             playSound(soundId, buttonElement) {
-                if (this.isLoading) return;
+                if (!this.audioEnabled) return;
 
                 try {
                     // Visual feedback
@@ -472,64 +471,42 @@
                         buttonElement.classList.remove('playing');
                     }, 500);
 
-                    // Play sound
-                    if (this.sounds[soundId]) {
-                        const audio = this.sounds[soundId];
-                        
-                        // Stop any currently playing instance
-                        audio.pause();
-                        audio.currentTime = 0;
-                        audio.volume = this.currentVolume;
-                        
-                        const playPromise = audio.play();
-                        if (playPromise !== undefined) {
-                            playPromise.then(() => {
-                                console.log(`Playing sound: ${soundId}`);
-                            }).catch(error => {
-                                console.warn('Audio play failed:', error);
-                                // Try to unlock audio if it hasn't been unlocked yet
-                                if (!this.audioUnlocked) {
-                                    this.forceAudioUnlock();
-                                }
-                                this.showError(buttonElement);
-                            });
-                        }
-                    } else {
-                        console.warn(`Sound ${soundId} not found`);
-                        this.showError(buttonElement);
-                    }
+                    // Play sound using Web Audio API (should work after user interaction)
+                    const frequency = this.frequencies[soundId] || 440;
+                    this.playBeep(frequency);
+                    
+                    console.log(`Playing sound: ${soundId} at ${frequency}Hz`);
                 } catch (error) {
                     console.error('Error playing sound:', error);
                     this.showError(buttonElement);
                 }
             }
 
-            forceAudioUnlock() {
-                // Force audio unlock if it failed the first time
-                const firstAudio = Object.values(this.sounds)[0];
-                if (firstAudio) {
-                    firstAudio.volume = 0.1;
-                    const playPromise = firstAudio.play();
-                    if (playPromise) {
-                        playPromise.then(() => {
-                            firstAudio.pause();
-                            firstAudio.currentTime = 0;
-                            this.audioUnlocked = true;
-                            console.log('Audio force-unlocked');
-                        }).catch(() => {
-                            console.log('Force unlock also failed');
-                        });
-                    }
+            playBeep(frequency) {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(this.currentVolume * 0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (error) {
+                    console.error('Beep playback failed:', error);
                 }
             }
 
             updateAllVolumes() {
-                // Update volume for all audio elements
-                Object.values(this.sounds).forEach(audio => {
-                    if (audio && typeof audio.volume !== 'undefined') {
-                        audio.volume = this.currentVolume;
-                    }
-                });
+                // Volume is handled per-beep in playBeep method
+                console.log(`Volume updated to: ${this.currentVolume}`);
             }
 
             showError(buttonElement) {
@@ -542,7 +519,6 @@
 
         // Initialize the soundboard when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.add('loading');
             new SoundBoard();
         });
 
