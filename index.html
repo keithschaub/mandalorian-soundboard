@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v3.3</title>
+    <title>Mandalorian Soundboard v3.4</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v3.3</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v3.4</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -661,48 +661,68 @@
                     } catch (error) {
                         this.debugLog(`⚠️ Error stopping background music: ${error.message}`);
                     }
+                    this.backgroundMusic = null;
                 }
 
+                // Longer delay for background music to ensure clean start
                 setTimeout(() => {
                     audio.volume = this.currentVolume * 0.7; // Slightly lower volume for background
                     audio.currentTime = 0;
                     
-                    this.backgroundMusic = audio;
-                    this.debugLog(`🎵 Playing background music: ${soundId}.mp3`);
+                    this.debugLog(`🎵 Starting background music: ${soundId}.mp3`);
                     
                     const playPromise = audio.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
+                            this.backgroundMusic = audio; // Only set after successful start
                             this.debugLog(`✅ Background music playing: ${soundId}`);
                         }).catch(error => {
                             this.debugLog(`❌ Background music failed: ${error.message}`);
                             this.backgroundMusic = null;
                             this.showError(buttonElement);
+                            
+                            // Retry background music
+                            setTimeout(() => {
+                                this.debugLog(`🔄 Retrying background music: ${soundId}`);
+                                audio.currentTime = 0;
+                                const retryPromise = audio.play();
+                                if (retryPromise !== undefined) {
+                                    retryPromise.then(() => {
+                                        this.backgroundMusic = audio;
+                                        this.debugLog(`✅ Background music retry successful: ${soundId}`);
+                                    }).catch(retryError => {
+                                        this.debugLog(`❌ Background music retry failed: ${retryError.message}`);
+                                    });
+                                }
+                            }, 200);
                         });
                     }
-                }, 50);
+                }, 100); // Increased delay for background music
             }
 
             playRegularSound(soundId, audio, buttonElement) {
+                // Longer delay if background music is playing to avoid conflicts
+                const delay = this.backgroundMusic ? 150 : 50;
+                
                 setTimeout(() => {
                     audio.volume = this.currentVolume;
                     audio.currentTime = 0;
                     
-                    this.currentlyPlaying = audio;
-                    this.debugLog(`🎵 Playing regular sound: ${soundId}.mp3`);
+                    this.debugLog(`🎵 Playing regular sound: ${soundId}.mp3 (delay: ${delay}ms)`);
                     
                     const playPromise = audio.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
+                            this.currentlyPlaying = audio; // Only set after successful start
                             this.debugLog(`✅ Successfully playing: ${soundId}`);
                         }).catch(error => {
                             this.debugLog(`❌ Play failed: ${error.message}`);
                             this.currentlyPlaying = null;
                             this.showError(buttonElement);
                             
-                            // Retry once after a short delay
+                            // More aggressive retry for regular sounds
                             setTimeout(() => {
-                                this.debugLog(`🔄 Retrying: ${soundId}`);
+                                this.debugLog(`🔄 Retrying regular sound: ${soundId}`);
                                 audio.currentTime = 0;
                                 const retryPromise = audio.play();
                                 if (retryPromise !== undefined) {
@@ -711,12 +731,27 @@
                                         this.debugLog(`✅ Retry successful: ${soundId}`);
                                     }).catch(retryError => {
                                         this.debugLog(`❌ Retry failed: ${retryError.message}`);
+                                        
+                                        // Second retry with longer delay
+                                        setTimeout(() => {
+                                            this.debugLog(`🔄 Second retry: ${soundId}`);
+                                            audio.currentTime = 0;
+                                            const secondRetry = audio.play();
+                                            if (secondRetry !== undefined) {
+                                                secondRetry.then(() => {
+                                                    this.currentlyPlaying = audio;
+                                                    this.debugLog(`✅ Second retry successful: ${soundId}`);
+                                                }).catch(finalError => {
+                                                    this.debugLog(`❌ All retries failed: ${finalError.message}`);
+                                                });
+                                            }
+                                        }, 300);
                                     });
                                 }
-                            }, 100);
+                            }, 150);
                         });
                     }
-                }, 50);
+                }, delay);
             }
 
             stopCurrentSound() {
