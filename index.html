@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v3.1</title>
+    <title>Mandalorian Soundboard v3.2</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v3.1</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v3.2</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -587,6 +587,14 @@
                     audio.addEventListener('canplaythrough', (e) => {
                         this.debugLog(`✅ Loaded: ${soundId}.mp3`);
                     });
+
+                    // Add ended event listener only once during preload
+                    audio.addEventListener('ended', () => {
+                        if (this.currentlyPlaying === audio) {
+                            this.currentlyPlaying = null;
+                            this.debugLog(`🔇 Sound ended: ${soundId}`);
+                        }
+                    });
                 });
 
                 this.debugLog(`Preloading ${soundFiles.length} audio files...`);
@@ -603,9 +611,6 @@
                 }
 
                 try {
-                    // Stop any currently playing sound first
-                    this.stopCurrentSound();
-
                     // Visual feedback
                     buttonElement.classList.add('playing');
                     setTimeout(() => {
@@ -615,32 +620,46 @@
                     // Play real audio file
                     if (this.sounds[soundId]) {
                         const audio = this.sounds[soundId];
-                        audio.volume = this.currentVolume;
-                        audio.currentTime = 0; // Reset to start
                         
-                        // Track this as the currently playing sound
-                        this.currentlyPlaying = audio;
+                        // Stop any currently playing sound first
+                        this.stopCurrentSound();
                         
-                        this.debugLog(`🎵 Playing: ${soundId}.mp3`);
-                        
-                        const playPromise = audio.play();
-                        if (playPromise !== undefined) {
-                            playPromise.then(() => {
-                                this.debugLog(`✅ Successfully playing: ${soundId}`);
-                            }).catch(error => {
-                                this.debugLog(`❌ Play failed: ${error.message}`);
-                                this.currentlyPlaying = null; // Clear on error
-                                this.showError(buttonElement);
-                            });
-                        }
-
-                        // Clear currentlyPlaying when sound ends naturally
-                        audio.addEventListener('ended', () => {
-                            if (this.currentlyPlaying === audio) {
-                                this.currentlyPlaying = null;
-                                this.debugLog(`🔇 Sound ended: ${soundId}`);
+                        // Small delay to ensure stop completes before starting new sound
+                        setTimeout(() => {
+                            audio.volume = this.currentVolume;
+                            audio.currentTime = 0; // Reset to start
+                            
+                            // Track this as the currently playing sound
+                            this.currentlyPlaying = audio;
+                            
+                            this.debugLog(`🎵 Playing: ${soundId}.mp3`);
+                            
+                            const playPromise = audio.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    this.debugLog(`✅ Successfully playing: ${soundId}`);
+                                }).catch(error => {
+                                    this.debugLog(`❌ Play failed: ${error.message}`);
+                                    this.currentlyPlaying = null; // Clear on error
+                                    this.showError(buttonElement);
+                                    
+                                    // Retry once after a short delay
+                                    setTimeout(() => {
+                                        this.debugLog(`🔄 Retrying: ${soundId}`);
+                                        audio.currentTime = 0;
+                                        const retryPromise = audio.play();
+                                        if (retryPromise !== undefined) {
+                                            retryPromise.then(() => {
+                                                this.currentlyPlaying = audio;
+                                                this.debugLog(`✅ Retry successful: ${soundId}`);
+                                            }).catch(retryError => {
+                                                this.debugLog(`❌ Retry failed: ${retryError.message}`);
+                                            });
+                                        }
+                                    }, 100);
+                                });
                             }
-                        });
+                        }, 50); // 50ms delay to ensure clean stop
 
                     } else {
                         this.debugLog(`❌ Sound not found: ${soundId}`);
@@ -657,8 +676,12 @@
             stopCurrentSound() {
                 if (this.currentlyPlaying) {
                     this.debugLog(`⏹️ Stopping currently playing sound`);
-                    this.currentlyPlaying.pause();
-                    this.currentlyPlaying.currentTime = 0;
+                    try {
+                        this.currentlyPlaying.pause();
+                        this.currentlyPlaying.currentTime = 0;
+                    } catch (error) {
+                        this.debugLog(`⚠️ Error stopping sound: ${error.message}`);
+                    }
                     this.currentlyPlaying = null;
                 }
             }
