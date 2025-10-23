@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v3.2</title>
+    <title>Mandalorian Soundboard v3.3</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v3.2</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v3.3</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -434,7 +434,9 @@
                 this.currentVolume = 0.8;
                 this.audioEnabled = false;
                 this.audioContext = null;
-                this.currentlyPlaying = null; // Track currently playing audio
+                this.currentlyPlaying = null; // Track currently playing audio (non-background)
+                this.backgroundMusic = null; // Track background music (themes)
+                this.backgroundSounds = ['Mando Theme', 'Mando Flute']; // Sounds that play as background
                 this.init();
             }
 
@@ -594,6 +596,10 @@
                             this.currentlyPlaying = null;
                             this.debugLog(`🔇 Sound ended: ${soundId}`);
                         }
+                        if (this.backgroundMusic === audio) {
+                            this.backgroundMusic = null;
+                            this.debugLog(`🎵 Background music ended: ${soundId}`);
+                        }
                     });
                 });
 
@@ -617,49 +623,21 @@
                         buttonElement.classList.remove('playing');
                     }, 500);
 
+                    // Check if this is a background music sound
+                    const isBackgroundSound = this.backgroundSounds.includes(soundId);
+
                     // Play real audio file
                     if (this.sounds[soundId]) {
                         const audio = this.sounds[soundId];
                         
-                        // Stop any currently playing sound first
-                        this.stopCurrentSound();
-                        
-                        // Small delay to ensure stop completes before starting new sound
-                        setTimeout(() => {
-                            audio.volume = this.currentVolume;
-                            audio.currentTime = 0; // Reset to start
-                            
-                            // Track this as the currently playing sound
-                            this.currentlyPlaying = audio;
-                            
-                            this.debugLog(`🎵 Playing: ${soundId}.mp3`);
-                            
-                            const playPromise = audio.play();
-                            if (playPromise !== undefined) {
-                                playPromise.then(() => {
-                                    this.debugLog(`✅ Successfully playing: ${soundId}`);
-                                }).catch(error => {
-                                    this.debugLog(`❌ Play failed: ${error.message}`);
-                                    this.currentlyPlaying = null; // Clear on error
-                                    this.showError(buttonElement);
-                                    
-                                    // Retry once after a short delay
-                                    setTimeout(() => {
-                                        this.debugLog(`🔄 Retrying: ${soundId}`);
-                                        audio.currentTime = 0;
-                                        const retryPromise = audio.play();
-                                        if (retryPromise !== undefined) {
-                                            retryPromise.then(() => {
-                                                this.currentlyPlaying = audio;
-                                                this.debugLog(`✅ Retry successful: ${soundId}`);
-                                            }).catch(retryError => {
-                                                this.debugLog(`❌ Retry failed: ${retryError.message}`);
-                                            });
-                                        }
-                                    }, 100);
-                                });
-                            }
-                        }, 50); // 50ms delay to ensure clean stop
+                        if (isBackgroundSound) {
+                            // Handle background music (themes)
+                            this.playBackgroundMusic(soundId, audio, buttonElement);
+                        } else {
+                            // Handle regular sounds (stop current non-background sound first)
+                            this.stopCurrentSound();
+                            this.playRegularSound(soundId, audio, buttonElement);
+                        }
 
                     } else {
                         this.debugLog(`❌ Sound not found: ${soundId}`);
@@ -671,6 +649,74 @@
                     this.debugLog(`❌ Error playing sound: ${error.message}`);
                     this.showError(buttonElement);
                 }
+            }
+
+            playBackgroundMusic(soundId, audio, buttonElement) {
+                // Stop any existing background music first
+                if (this.backgroundMusic) {
+                    this.debugLog(`⏹️ Stopping previous background music`);
+                    try {
+                        this.backgroundMusic.pause();
+                        this.backgroundMusic.currentTime = 0;
+                    } catch (error) {
+                        this.debugLog(`⚠️ Error stopping background music: ${error.message}`);
+                    }
+                }
+
+                setTimeout(() => {
+                    audio.volume = this.currentVolume * 0.7; // Slightly lower volume for background
+                    audio.currentTime = 0;
+                    
+                    this.backgroundMusic = audio;
+                    this.debugLog(`🎵 Playing background music: ${soundId}.mp3`);
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.debugLog(`✅ Background music playing: ${soundId}`);
+                        }).catch(error => {
+                            this.debugLog(`❌ Background music failed: ${error.message}`);
+                            this.backgroundMusic = null;
+                            this.showError(buttonElement);
+                        });
+                    }
+                }, 50);
+            }
+
+            playRegularSound(soundId, audio, buttonElement) {
+                setTimeout(() => {
+                    audio.volume = this.currentVolume;
+                    audio.currentTime = 0;
+                    
+                    this.currentlyPlaying = audio;
+                    this.debugLog(`🎵 Playing regular sound: ${soundId}.mp3`);
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.debugLog(`✅ Successfully playing: ${soundId}`);
+                        }).catch(error => {
+                            this.debugLog(`❌ Play failed: ${error.message}`);
+                            this.currentlyPlaying = null;
+                            this.showError(buttonElement);
+                            
+                            // Retry once after a short delay
+                            setTimeout(() => {
+                                this.debugLog(`🔄 Retrying: ${soundId}`);
+                                audio.currentTime = 0;
+                                const retryPromise = audio.play();
+                                if (retryPromise !== undefined) {
+                                    retryPromise.then(() => {
+                                        this.currentlyPlaying = audio;
+                                        this.debugLog(`✅ Retry successful: ${soundId}`);
+                                    }).catch(retryError => {
+                                        this.debugLog(`❌ Retry failed: ${retryError.message}`);
+                                    });
+                                }
+                            }, 100);
+                        });
+                    }
+                }, 50);
             }
 
             stopCurrentSound() {
@@ -691,7 +737,12 @@
                 // Update volume for all audio elements
                 Object.values(this.sounds).forEach(audio => {
                     if (audio && typeof audio.volume !== 'undefined') {
-                        audio.volume = this.currentVolume;
+                        // Check if this is background music (should be quieter)
+                        if (this.backgroundMusic === audio) {
+                            audio.volume = this.currentVolume * 0.7;
+                        } else {
+                            audio.volume = this.currentVolume;
+                        }
                     }
                 });
                 this.debugLog(`Volume updated to: ${this.currentVolume}`);
