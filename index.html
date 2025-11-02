@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v3.6</title>
+    <title>Mandalorian Soundboard v4.0</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -91,15 +91,16 @@
         }
 
         .btn-emoji {
-            font-size: 18px;
-            margin-bottom: 3px;
+            font-size: 20px;
+            margin-bottom: 2px;
         }
 
         .btn-text {
-            font-size: 8px;
-            line-height: 1.0;
+            font-size: 11px;
+            line-height: 1.1;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
+            font-weight: 900;
         }
 
         /* Color variants */
@@ -162,7 +163,12 @@
             }
             
             .btn-text {
-                font-size: 7px;
+                font-size: 9px;
+                font-weight: 900;
+            }
+            
+            .btn-emoji {
+                font-size: 18px;
             }
             
             .app-title {
@@ -182,7 +188,12 @@
             }
             
             .btn-text {
-                font-size: 6px;
+                font-size: 8px;
+                font-weight: 900;
+            }
+            
+            .btn-emoji {
+                font-size: 16px;
             }
             
             .app-title {
@@ -295,7 +306,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v3.6</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v4.0</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -499,7 +510,8 @@
                 document.getElementById('colorLegend').style.display = 'flex';
                 document.getElementById('soundGrid').style.display = 'grid';
                 document.getElementById('volumeControl').style.display = 'block';
-                document.getElementById('debugPanel').style.display = 'block';
+                // Debug panel hidden for production use
+                // document.getElementById('debugPanel').style.display = 'block';
                 this.debugLog('Soundboard UI shown');
             }
 
