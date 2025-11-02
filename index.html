@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v4.4</title>
+    <title>Mandalorian Soundboard v4.5</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -84,19 +84,24 @@
             animation: pulse 0.5s ease-in-out;
         }
 
-        .sound-btn.toggled-on {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3) !important;
-            border: 4px solid rgba(255, 255, 255, 0.9) !important;
-            animation: glow 2s ease-in-out infinite alternate !important;
+        .sound-btn.orange.playing {
+            background: linear-gradient(145deg, #FF8C00, #FF7F00) !important;
+            animation: pulse 0.5s ease-in-out;
         }
 
-        @keyframes glow {
+        .sound-btn.toggled-on {
+            background: linear-gradient(145deg, rgba(255, 165, 0, 0.6), rgba(255, 140, 0, 0.4)) !important;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.9), inset 0 0 10px rgba(255, 165, 0, 0.4) !important;
+            border: 4px solid rgba(255, 165, 0, 1) !important;
+            animation: orange-glow 2s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes orange-glow {
             from {
-                box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+                box-shadow: 0 0 20px rgba(255, 165, 0, 0.9), inset 0 0 10px rgba(255, 165, 0, 0.4);
             }
             to {
-                box-shadow: 0 0 30px rgba(255, 255, 255, 1), inset 0 0 15px rgba(255, 255, 255, 0.5);
+                box-shadow: 0 0 35px rgba(255, 165, 0, 1), inset 0 0 20px rgba(255, 165, 0, 0.6);
             }
         }
 
@@ -314,7 +319,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v4.4</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v4.5</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
