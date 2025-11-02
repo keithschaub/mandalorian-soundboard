@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v4.2</title>
+    <title>Mandalorian Soundboard v4.3</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -82,6 +82,12 @@
         .sound-btn.playing {
             background: linear-gradient(145deg, #00FF41, #00CC33);
             animation: pulse 0.5s ease-in-out;
+        }
+
+        .sound-btn.toggled-on {
+            background-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            border-width: 3px;
         }
 
         @keyframes pulse {
@@ -298,7 +304,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v4.2</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v4.3</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -421,6 +427,7 @@
                 this.backgroundMusic = null; // Track background music (themes)
                 this.backgroundSounds = ['Mando Theme', 'Mando Flute']; // Sounds that play as background
                 this.problematicSounds = ['Thank you', 'Yes']; // Sounds that need extra handling
+                this.toggledThemes = {}; // Track which theme buttons are toggled on
                 this.init();
             }
 
@@ -627,31 +634,52 @@
                 }
 
                 try {
-                    // Visual feedback
-                    buttonElement.classList.add('playing');
-                    setTimeout(() => {
-                        buttonElement.classList.remove('playing');
-                    }, 500);
-
                     // Check if this is a background music sound
                     const isBackgroundSound = this.backgroundSounds.includes(soundId);
 
-                    // Play real audio file
-                    if (this.sounds[soundId]) {
-                        const audio = this.sounds[soundId];
-                        
-                        if (isBackgroundSound) {
-                            // Handle background music (themes)
-                            this.playBackgroundMusic(soundId, audio, buttonElement);
+                    if (isBackgroundSound) {
+                        // Handle toggle functionality for theme buttons
+                        if (this.toggledThemes[soundId]) {
+                            // Turn OFF - stop the theme and remove toggle state
+                            this.debugLog(`🔄 Toggling OFF theme: ${soundId}`);
+                            this.stopBackgroundMusic();
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
+                            
+                            // Brief visual feedback for toggle off
+                            buttonElement.classList.add('playing');
+                            setTimeout(() => {
+                                buttonElement.classList.remove('playing');
+                            }, 200);
                         } else {
-                            // Handle regular sounds (stop current non-background sound first)
-                            this.stopCurrentSound();
-                            this.playRegularSound(soundId, audio, buttonElement);
+                            // Turn ON - start the theme with looping
+                            this.debugLog(`🔄 Toggling ON theme: ${soundId}`);
+                            this.toggledThemes[soundId] = true;
+                            buttonElement.classList.add('toggled-on');
+                            
+                            // Play the theme with looping
+                            if (this.sounds[soundId]) {
+                                const audio = this.sounds[soundId];
+                                this.playBackgroundMusicWithLoop(soundId, audio, buttonElement);
+                            }
                         }
-
                     } else {
-                        this.debugLog(`❌ Sound not found: ${soundId}`);
-                        this.showError(buttonElement);
+                        // Regular sound - normal visual feedback
+                        buttonElement.classList.add('playing');
+                        setTimeout(() => {
+                            buttonElement.classList.remove('playing');
+                        }, 500);
+
+                        // Handle regular sounds (stop current non-background sound first)
+                        this.stopCurrentSound();
+                        
+                        if (this.sounds[soundId]) {
+                            const audio = this.sounds[soundId];
+                            this.playRegularSound(soundId, audio, buttonElement);
+                        } else {
+                            this.debugLog(`❌ Sound not found: ${soundId}`);
+                            this.showError(buttonElement);
+                        }
                     }
                     
                     this.debugLog(`=== PLAY SOUND END ===`);
@@ -661,40 +689,58 @@
                 }
             }
 
-            playBackgroundMusic(soundId, audio, buttonElement) {
-                // Stop any existing background music first
+            stopBackgroundMusic() {
                 if (this.backgroundMusic) {
-                    this.debugLog(`⏹️ Stopping previous background music`);
+                    this.debugLog(`⏹️ Stopping background music`);
                     try {
                         this.backgroundMusic.pause();
                         this.backgroundMusic.currentTime = 0;
+                        this.backgroundMusic.loop = false;
                     } catch (error) {
                         this.debugLog(`⚠️ Error stopping background music: ${error.message}`);
                     }
                     this.backgroundMusic = null;
                 }
+                
+                // Clear all toggle states and visual indicators
+                Object.keys(this.toggledThemes).forEach(themeId => {
+                    this.toggledThemes[themeId] = false;
+                    const themeButton = document.querySelector(`[data-sound="${themeId}"]`);
+                    if (themeButton) {
+                        themeButton.classList.remove('toggled-on');
+                    }
+                });
+            }
+
+            playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
+                // Stop any existing background music first
+                this.stopBackgroundMusic();
 
                 // Longer delay for background music to ensure clean start
                 setTimeout(() => {
                     audio.volume = this.currentVolume * 0.7; // Slightly lower volume for background
                     audio.currentTime = 0;
+                    audio.loop = true; // Enable looping
                     
-                    this.debugLog(`🎵 Starting background music: ${soundId}.mp3`);
+                    this.debugLog(`🎵 Starting looped background music: ${soundId}.mp3`);
                     
                     const playPromise = audio.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
                             this.backgroundMusic = audio; // Only set after successful start
-                            this.debugLog(`✅ Background music playing: ${soundId}`);
+                            this.debugLog(`✅ Looped background music playing: ${soundId}`);
                         }).catch(error => {
                             this.debugLog(`❌ Background music failed: ${error.message}`);
                             this.backgroundMusic = null;
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
                             this.showError(buttonElement);
                             
                             // Retry background music
                             setTimeout(() => {
                                 this.debugLog(`🔄 Retrying background music: ${soundId}`);
                                 audio.currentTime = 0;
+                                audio.loop = true;
                                 const retryPromise = audio.play();
                                 if (retryPromise !== undefined) {
                                     retryPromise.then(() => {
@@ -702,12 +748,19 @@
                                         this.debugLog(`✅ Background music retry successful: ${soundId}`);
                                     }).catch(retryError => {
                                         this.debugLog(`❌ Background music retry failed: ${retryError.message}`);
+                                        this.toggledThemes[soundId] = false;
+                                        buttonElement.classList.remove('toggled-on');
                                     });
                                 }
                             }, 200);
                         });
                     }
                 }, 100); // Increased delay for background music
+            }
+
+            playBackgroundMusic(soundId, audio, buttonElement) {
+                // This method is kept for compatibility but now just calls the loop version
+                this.playBackgroundMusicWithLoop(soundId, audio, buttonElement);
             }
 
             playRegularSound(soundId, audio, buttonElement) {
