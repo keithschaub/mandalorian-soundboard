@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandalorian Soundboard v4.0</title>
+    <title>Mandalorian Soundboard v4.1</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -90,17 +90,13 @@
             100% { transform: scale(1); }
         }
 
-        .btn-emoji {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
         .btn-text {
-            font-size: 11px;
-            line-height: 1.1;
+            font-size: 16px;
+            line-height: 1.0;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.1px;
             font-weight: 900;
+            padding: 8px;
         }
 
         /* Color variants */
@@ -163,12 +159,9 @@
             }
             
             .btn-text {
-                font-size: 9px;
+                font-size: 13px;
                 font-weight: 900;
-            }
-            
-            .btn-emoji {
-                font-size: 18px;
+                padding: 6px;
             }
             
             .app-title {
@@ -188,12 +181,9 @@
             }
             
             .btn-text {
-                font-size: 8px;
+                font-size: 11px;
                 font-weight: 900;
-            }
-            
-            .btn-emoji {
-                font-size: 16px;
+                padding: 4px;
             }
             
             .app-title {
@@ -306,7 +296,7 @@
     </style>
 </head>
 <body>
-    <h1 class="app-title">🪖 MANDALORIAN v4.0</h1>
+    <h1 class="app-title">🪖 MANDALORIAN v4.1</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -324,104 +314,84 @@
     <div class="sound-grid" id="soundGrid" style="display: none;">
         <!-- ORANGE = THEMES (Music) -->
         <button class="sound-btn orange" data-sound="Mando Theme">
-            <div class="btn-emoji">🟠</div>
             <div class="btn-text">MANDO<br>THEME</div>
         </button>
         
         <button class="sound-btn orange" data-sound="Mando Flute">
-            <div class="btn-emoji">🟠</div>
             <div class="btn-text">MANDO<br>FLUTE</div>
         </button>
         
         <!-- BLUE = MANDO (Din Djarin speaking) -->
         <button class="sound-btn blue" data-sound="This is the way">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">THIS IS<br>THE WAY</div>
         </button>
         
         <button class="sound-btn blue" data-sound="I'm a Mandalorian">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">I'M A<br>MANDO</div>
         </button>
         
         <button class="sound-btn blue" data-sound="No droids">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">NO<br>DROIDS</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Great">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">GREAT</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Thank you">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">THANK<br>YOU</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Yes">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">YES</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Don't touch anything">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">DON'T<br>TOUCH</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Do not self destruct">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">NO SELF<br>DESTRUCT</div>
         </button>
         
         <button class="sound-btn blue" data-sound="I could use a crew">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">NEED<br>CREW</div>
         </button>
         
         <button class="sound-btn blue" data-sound="I don't belong here">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">DON'T<br>BELONG</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Where do you live">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">WHERE<br>LIVE?</div>
         </button>
         
         <button class="sound-btn blue" data-sound="Why so slow">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">WHY SO<br>SLOW?</div>
         </button>
         
         <button class="sound-btn blue" data-sound="You want some soup">
-            <div class="btn-emoji">🔵</div>
             <div class="btn-text">WANT<br>SOUP?</div>
         </button>
         
         <!-- GREEN = GROGU (Baby Yoda sounds) -->
         <button class="sound-btn green" data-sound="Grogu Cooing">
-            <div class="btn-emoji">🟢</div>
             <div class="btn-text">GROGU<br>COO</div>
         </button>
         
         <button class="sound-btn green" data-sound="Grogu giggling">
-            <div class="btn-emoji">🟢</div>
             <div class="btn-text">GROGU<br>GIGGLE</div>
         </button>
         
         <button class="sound-btn green" data-sound="Grogu YES">
-            <div class="btn-emoji">🟢</div>
             <div class="btn-text">GROGU<br>YES</div>
         </button>
         
         <button class="sound-btn green" data-sound="Grogu NO">
-            <div class="btn-emoji">🟢</div>
             <div class="btn-text">GROGU<br>NO</div>
         </button>
         
         <button class="sound-btn green" data-sound="Grogu bad baby">
-            <div class="btn-emoji">🟢</div>
             <div class="btn-text">BAD<br>BABY</div>
         </button>
     </div>
