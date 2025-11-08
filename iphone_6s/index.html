@@ -407,6 +407,8 @@
         .ring-1 { width: 33%; height: 33%; }
         .ring-2 { width: 66%; height: 66%; }
         .ring-3 { width: 100%; height: 100%; }
+        .ring-4 { width: 133%; height: 133%; }
+        .ring-5 { width: 166%; height: 166%; }
 
         .radar-center {
             position: absolute;
@@ -466,10 +468,18 @@
             position: absolute;
             width: 6px;
             height: 6px;
-            background: #00ff00;
             border-radius: 50%;
-            box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
             animation: blip-fade 3s ease-out forwards;
+        }
+
+        .radar-blip.green {
+            background: #00ff00;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+        }
+
+        .radar-blip.red {
+            background: #ff0000;
+            box-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
         }
 
         @keyframes blip-fade {
@@ -499,11 +509,13 @@
                 <div class="ring ring-1"></div>
                 <div class="ring ring-2"></div>
                 <div class="ring ring-3"></div>
+                <div class="ring ring-4"></div>
+                <div class="ring ring-5"></div>
             </div>
             <div class="helmet-silhouette"></div>
             <div class="radar-sweep"></div>
             <div class="radar-center"></div>
-            <div class="radar-text">TAP TO ACTIVATE</div>
+            <div class="radar-text">ENEMIES NEARBY</div>
         </div>
     </div>
 
@@ -996,17 +1008,26 @@
         let inactivityTimer = null;
         let blipInterval = null;
         const INACTIVITY_TIMEOUT = 30000; // 30 seconds to return to radar
+        let activeBlips = { green: 0, red: 0 };
+        const MAX_GREEN_BLIPS = 7;
+        const MAX_RED_BLIPS = 4;
 
-        function createBlip() {
+        function createBlip(isRed = false) {
             const radarContainer = document.querySelector('.radar-container');
             if (!radarContainer || !radarActive) return;
 
-            const blip = document.createElement('div');
-            blip.className = 'radar-blip';
+            const color = isRed ? 'red' : 'green';
+            const maxBlips = isRed ? MAX_RED_BLIPS : MAX_GREEN_BLIPS;
             
-            // Random position within radar circle
+            // Don't create if we already have enough of this color
+            if (activeBlips[color] >= maxBlips) return;
+
+            const blip = document.createElement('div');
+            blip.className = `radar-blip ${color}`;
+            
+            // Random position within radar circle (can extend beyond visible area)
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 0.4 + 0.1; // 10% to 50% from center
+            const distance = Math.random() * 0.7 + 0.1; // 10% to 80% from center (allows for outer rings)
             const centerX = 50;
             const centerY = 50;
             
@@ -1017,22 +1038,39 @@
             blip.style.top = y + '%';
             
             radarContainer.appendChild(blip);
-            
+            activeBlips[color]++;
+
             // Remove blip after animation
             setTimeout(() => {
                 if (blip.parentNode) {
                     blip.parentNode.removeChild(blip);
+                    activeBlips[color]--;
                 }
             }, 3000);
         }
 
         function startBlips() {
             if (blipInterval) clearInterval(blipInterval);
+            
+            // Create initial blips to populate the screen
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => createBlip(false), i * 400); // Green blips
+            }
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createBlip(true), i * 500); // Red blips
+            }
+            
+            // Continue creating blips periodically
             blipInterval = setInterval(() => {
                 if (radarActive) {
-                    createBlip();
+                    // Create green blip (more common)
+                    if (Math.random() > 0.3) { // 70% chance for green
+                        createBlip(false);
+                    } else { // 30% chance for red
+                        createBlip(true);
+                    }
                 }
-            }, 2000); // New blip every 2 seconds
+            }, 800); // New blip every 0.8 seconds
         }
 
         function showRadar() {
