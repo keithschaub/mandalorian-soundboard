@@ -995,8 +995,30 @@
         let activeBlips = { green: 0, red: 0 };
         const MAX_GREEN_BLIPS = 7;
         const MAX_RED_BLIPS = 4;
+        const SWEEP_DURATION = 3000; // 3 seconds for full rotation
+        let radarStartTime = Date.now();
 
-        function createBlip(isRed = false) {
+        // Get current radar sweep angle (0 to 2π)
+        function getCurrentSweepAngle() {
+            const elapsed = (Date.now() - radarStartTime) % SWEEP_DURATION;
+            return (elapsed / SWEEP_DURATION) * Math.PI * 2;
+        }
+
+        // Calculate when sweep will reach a given angle
+        function getTimeUntilSweepReachesAngle(targetAngle) {
+            const currentAngle = getCurrentSweepAngle();
+            let angleDiff = targetAngle - currentAngle;
+            
+            // Normalize angle difference to 0-2π range
+            if (angleDiff < 0) angleDiff += Math.PI * 2;
+            
+            // Convert angle difference to time (sweep rotates 2π in SWEEP_DURATION ms)
+            const timeUntilReach = (angleDiff / (Math.PI * 2)) * SWEEP_DURATION;
+            
+            return timeUntilReach;
+        }
+
+        function createBlip(isRed = false, targetAngle = null) {
             const radarContainer = document.querySelector('.radar-container');
             if (!radarContainer || !radarActive) return;
 
@@ -1010,7 +1032,7 @@
             blip.className = `radar-blip ${color}`;
             
             // Random position within radar circle (can extend beyond visible area)
-            const angle = Math.random() * Math.PI * 2;
+            const angle = targetAngle !== null ? targetAngle : (Math.random() * Math.PI * 2);
             const distance = Math.random() * 0.95 + 0.05; // 5% to 100% from center (fills entire screen including outer rings)
             const centerX = 50;
             const centerY = 50;
@@ -1021,46 +1043,65 @@
             blip.style.left = x + '%';
             blip.style.top = y + '%';
             
-            radarContainer.appendChild(blip);
-            activeBlips[color]++;
-
-            // Remove blip after animation
+            // Calculate when sweep will reach this angle, then show blip slightly after
+            const timeUntilSweep = getTimeUntilSweepReachesAngle(angle);
+            const delayAfterSweep = 50; // 50ms after sweep passes (looks like it was just detected)
+            const totalDelay = timeUntilSweep + delayAfterSweep;
+            
+            // If delay is too long (more than one rotation), show it in next rotation
+            const finalDelay = totalDelay > SWEEP_DURATION ? totalDelay - SWEEP_DURATION : totalDelay;
+            
             setTimeout(() => {
-                if (blip.parentNode) {
-                    blip.parentNode.removeChild(blip);
-                    activeBlips[color]--;
+                if (radarActive && activeBlips[color] < maxBlips) {
+                    radarContainer.appendChild(blip);
+                    activeBlips[color]++;
+
+                    // Remove blip after animation
+                    setTimeout(() => {
+                        if (blip.parentNode) {
+                            blip.parentNode.removeChild(blip);
+                            activeBlips[color]--;
+                        }
+                    }, 3000);
                 }
-            }, 3000);
+            }, Math.max(0, finalDelay));
         }
 
         function startBlips() {
             if (blipInterval) clearInterval(blipInterval);
+            radarStartTime = Date.now(); // Reset sweep timing
             
-            // Create initial blips to populate the screen
+            // Create initial blips synchronized with sweep
             for (let i = 0; i < 5; i++) {
-                setTimeout(() => createBlip(false), i * 400); // Green blips
+                const angle = Math.random() * Math.PI * 2;
+                createBlip(false, angle); // Green blips
             }
             for (let i = 0; i < 3; i++) {
-                setTimeout(() => createBlip(true), i * 500); // Red blips
+                const angle = Math.random() * Math.PI * 2;
+                createBlip(true, angle); // Red blips
             }
             
-            // Continue creating blips periodically
+            // Continue creating blips periodically, synchronized with sweep
             blipInterval = setInterval(() => {
                 if (radarActive) {
+                    // Create blip at random angle (will be synchronized with sweep)
+                    const angle = Math.random() * Math.PI * 2;
+                    
                     // Create green blip (more common)
                     if (Math.random() > 0.3) { // 70% chance for green
-                        createBlip(false);
+                        createBlip(false, angle);
                     } else { // 30% chance for red
-                        createBlip(true);
+                        createBlip(true, angle);
                     }
                 }
-            }, 800); // New blip every 0.8 seconds
+            }, 600); // Check every 0.6 seconds for new blips
         }
 
         function showRadar() {
             document.getElementById('radarScreen').style.display = 'flex';
             document.getElementById('soundboardScreen').style.display = 'none';
             radarActive = true;
+            radarStartTime = Date.now(); // Reset sweep timing
             startBlips();
             clearTimeout(inactivityTimer);
         }
