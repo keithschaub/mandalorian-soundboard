@@ -525,20 +525,13 @@
         
         <h1 class="app-title">🪖 MANDALORIAN v5.1</h1>
     
-    <div id="audioEnableSection" class="audio-enable-section">
-        <button id="enableAudioBtn" class="enable-audio-btn">
-            🔊 ENABLE AUDIO
-        </button>
-        <p class="audio-help">Tap to enable sounds on your device</p>
-    </div>
-    
-    <div class="color-legend" id="colorLegend" style="display: none;">
+    <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
         <div class="legend-item">🟢 GROGU</div>
         <div class="legend-item">🟠 THEMES</div>
     </div>
     
-    <div class="sound-grid" id="soundGrid" style="display: none;">
+    <div class="sound-grid" id="soundGrid" style="display: grid;">
         <!-- ORANGE = THEMES (Music) -->
         <button class="sound-btn orange" data-sound="Mando Theme">
             <div class="btn-text">MANDO<br>THEME</div>
@@ -623,7 +616,7 @@
         </button>
     </div>
     
-        <div class="volume-control" id="volumeControl" style="display: none;">
+        <div class="volume-control" id="volumeControl" style="display: block;">
             <div class="volume-label">🔊 VOLUME</div>
             <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
         </div>
@@ -648,10 +641,11 @@
 
             init() {
                 this.setupOfflineDetection();
-                this.setupEnableAudioButton();
                 this.setupVolumeControl();
                 this.setupButtons();
                 this.checkServiceWorker();
+                // Auto-enable audio on initialization
+                this.enableAudio();
             }
 
             setupOfflineDetection() {
@@ -685,13 +679,6 @@
                 }
             }
 
-            setupEnableAudioButton() {
-                const enableBtn = document.getElementById('enableAudioBtn');
-                enableBtn.addEventListener('click', () => {
-                    this.enableAudio();
-                });
-            }
-
             enableAudio() {
                 try {
                     console.log('Starting audio enable process...');
@@ -718,7 +705,6 @@
                     
                     setTimeout(() => {
                         this.preloadSounds();
-                        this.showSoundboard();
                         this.audioEnabled = true;
                         console.log('Audio system enabled!');
                     }, 200);
@@ -729,10 +715,8 @@
             }
 
             showSoundboard() {
-                document.getElementById('audioEnableSection').style.display = 'none';
-                document.getElementById('colorLegend').style.display = 'flex';
-                document.getElementById('soundGrid').style.display = 'grid';
-                document.getElementById('volumeControl').style.display = 'block';
+                // Soundboard UI is already visible, no need to show/hide elements
+                // This function is kept for compatibility but does nothing now
             }
 
             setupVolumeControl() {
@@ -990,7 +974,7 @@
 
         // Initialize the soundboard when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new SoundBoard();
+            window.soundBoard = new SoundBoard();
         });
 
         // Prevent zoom on double tap (iOS)
@@ -1090,6 +1074,11 @@
                 blipInterval = null;
             }
             resetInactivityTimer();
+            
+            // Auto-enable audio if not already enabled
+            if (window.soundBoard && !window.soundBoard.audioEnabled) {
+                window.soundBoard.enableAudio();
+            }
         }
 
         function resetInactivityTimer() {
