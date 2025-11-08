@@ -492,9 +492,6 @@
         /* Blip text labels */
         .blip-label {
             position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
             color: #00ff00;
             font-family: 'Courier New', monospace;
             font-size: 12px;
@@ -503,6 +500,7 @@
             white-space: nowrap;
             pointer-events: none;
             animation: blip-fade 3s ease-out forwards;
+            transform: translateX(-50%);
         }
 
         @keyframes blip-fade {
@@ -1073,7 +1071,17 @@
                 const label = document.createElement('div');
                 label.className = 'blip-label';
                 label.textContent = randomName;
-                blip.appendChild(label);
+                // Position label above the blip using the same x coordinate
+                label.style.left = x + '%';
+                label.style.top = (y - 2) + '%'; // 2% above the blip
+                radarContainer.appendChild(label);
+                
+                // Remove label after animation (same as blip)
+                setTimeout(() => {
+                    if (label.parentNode) {
+                        label.parentNode.removeChild(label);
+                    }
+                }, 3000);
             }
             
             // Calculate when sweep will reach this angle, then show blip slightly after
