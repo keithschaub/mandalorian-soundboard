@@ -433,11 +433,11 @@
             bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            color: #00ff00;
+            color: #ff0000;
             font-family: 'Courier New', monospace;
             font-size: 18px;
             font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
             animation: blink 2s ease-in-out infinite;
             white-space: nowrap;
         }
@@ -1027,7 +1027,7 @@
             
             // Random position within radar circle (can extend beyond visible area)
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 0.7 + 0.1; // 10% to 80% from center (allows for outer rings)
+            const distance = Math.random() * 0.95 + 0.05; // 5% to 100% from center (fills entire screen including outer rings)
             const centerX = 50;
             const centerY = 50;
             
