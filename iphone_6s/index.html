@@ -346,12 +346,172 @@
             margin-top: 10px;
             cursor: pointer;
         }
+
+        /* Radar Screen Styles */
+        .radar-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            overflow: hidden;
+        }
+
+        .radar-container {
+            position: relative;
+            width: min(300px, 80vw);
+            height: min(300px, 80vw);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.05) 0%, transparent 70%);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .radar-sweep {
+            position: absolute;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.8), transparent);
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 0;
+            animation: radar-sweep 3s linear infinite;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .radar-rings {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .ring {
+            position: absolute;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-1 { width: 33%; height: 33%; }
+        .ring-2 { width: 66%; height: 66%; }
+        .ring-3 { width: 100%; height: 100%; }
+
+        .radar-center {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .radar-text {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+            animation: blink 2s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Mandalorian Helmet Silhouette */
+        .helmet-silhouette {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            opacity: 0.15;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 10 L30 25 L30 40 Q30 50 35 55 L35 70 Q35 75 40 75 L60 75 Q65 75 65 70 L65 55 Q70 50 70 40 L70 25 Z' fill='%2300ff00'/%3E%3Cpath d='M40 55 L40 65 L60 65 L60 55 Q50 60 40 55' fill='%2300ff00'/%3E%3Cpath d='M45 30 L45 40 L55 40 L55 30 Q50 25 45 30' fill='%2300ff00'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 0, 0.3));
+        }
+
+        /* Radar Blips */
+        .radar-blip {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+            animation: blip-fade 3s ease-out forwards;
+        }
+
+        @keyframes blip-fade {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+
+        /* Soundboard screen wrapper */
+        .soundboard-screen {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
-    <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
-    
-    <h1 class="app-title">🪖 MANDALORIAN v5.1</h1>
+    <!-- Radar Screen -->
+    <div id="radarScreen" class="radar-screen">
+        <div class="radar-container">
+            <div class="radar-rings">
+                <div class="ring ring-1"></div>
+                <div class="ring ring-2"></div>
+                <div class="ring ring-3"></div>
+            </div>
+            <div class="helmet-silhouette"></div>
+            <div class="radar-sweep"></div>
+            <div class="radar-center"></div>
+            <div class="radar-text">TAP TO ACTIVATE</div>
+        </div>
+    </div>
+
+    <!-- Soundboard Screen -->
+    <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
+        <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
+        
+        <h1 class="app-title">🪖 MANDALORIAN v5.1</h1>
     
     <div id="audioEnableSection" class="audio-enable-section">
         <button id="enableAudioBtn" class="enable-audio-btn">
@@ -451,9 +611,10 @@
         </button>
     </div>
     
-    <div class="volume-control" id="volumeControl" style="display: none;">
-        <div class="volume-label">🔊 VOLUME</div>
-        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+        <div class="volume-control" id="volumeControl" style="display: none;">
+            <div class="volume-label">🔊 VOLUME</div>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+        </div>
     </div>
 
     <script>
@@ -829,6 +990,95 @@
             }
             lastTouchEnd = now;
         }, false);
+
+        // Radar Screen Functionality
+        let radarActive = true;
+        let inactivityTimer = null;
+        let blipInterval = null;
+        const INACTIVITY_TIMEOUT = 30000; // 30 seconds to return to radar
+
+        function createBlip() {
+            const radarContainer = document.querySelector('.radar-container');
+            if (!radarContainer || !radarActive) return;
+
+            const blip = document.createElement('div');
+            blip.className = 'radar-blip';
+            
+            // Random position within radar circle
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 0.4 + 0.1; // 10% to 50% from center
+            const centerX = 50;
+            const centerY = 50;
+            
+            const x = centerX + Math.cos(angle) * distance * 50;
+            const y = centerY + Math.sin(angle) * distance * 50;
+            
+            blip.style.left = x + '%';
+            blip.style.top = y + '%';
+            
+            radarContainer.appendChild(blip);
+            
+            // Remove blip after animation
+            setTimeout(() => {
+                if (blip.parentNode) {
+                    blip.parentNode.removeChild(blip);
+                }
+            }, 3000);
+        }
+
+        function startBlips() {
+            if (blipInterval) clearInterval(blipInterval);
+            blipInterval = setInterval(() => {
+                if (radarActive) {
+                    createBlip();
+                }
+            }, 2000); // New blip every 2 seconds
+        }
+
+        function showRadar() {
+            document.getElementById('radarScreen').style.display = 'flex';
+            document.getElementById('soundboardScreen').style.display = 'none';
+            radarActive = true;
+            startBlips();
+            clearTimeout(inactivityTimer);
+        }
+
+        function showSoundboard() {
+            document.getElementById('radarScreen').style.display = 'none';
+            document.getElementById('soundboardScreen').style.display = 'block';
+            radarActive = false;
+            if (blipInterval) {
+                clearInterval(blipInterval);
+                blipInterval = null;
+            }
+            resetInactivityTimer();
+        }
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                showRadar();
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        // Initialize radar on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start blips
+            startBlips();
+            
+            // Touch radar screen to activate soundboard
+            document.getElementById('radarScreen').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                showSoundboard();
+            });
+            
+            // Reset inactivity timer on any soundboard interaction
+            document.addEventListener('touchstart', () => {
+                if (!radarActive) {
+                    resetInactivityTimer();
+                }
+            }, { passive: true });
+        });
 
         // Service Worker registration for PWA functionality
         if ('serviceWorker' in navigator) {
