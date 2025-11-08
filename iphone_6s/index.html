@@ -469,7 +469,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            animation: blip-fade 3s ease-out forwards;
+            animation: blip-fade 6s ease-out forwards;
         }
 
         .radar-blip.green {
@@ -485,8 +485,9 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            border-radius: 0;
-            box-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
+            border: none;
+            outline: none;
+            box-shadow: none;
         }
 
         /* Blip text labels */
@@ -494,12 +495,12 @@
             position: absolute;
             color: #00ff00;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 24px;
             font-weight: bold;
             text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
             white-space: nowrap;
             pointer-events: none;
-            animation: blip-fade 3s ease-out forwards;
+            animation: blip-fade 6s ease-out forwards;
             transform: translateX(-50%);
         }
 
@@ -1101,7 +1102,7 @@
                             if (label.parentNode) {
                                 label.parentNode.removeChild(label);
                             }
-                        }, 3000);
+                        }, 6000);
                     }
 
                     // Remove blip after animation
@@ -1110,7 +1111,7 @@
                             blip.parentNode.removeChild(blip);
                             activeBlips[color]--;
                         }
-                    }, 3000);
+                    }, 6000);
                 }
             }, Math.max(0, finalDelay));
         }
