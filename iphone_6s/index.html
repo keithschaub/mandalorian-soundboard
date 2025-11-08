@@ -1064,24 +1064,13 @@
             blip.style.left = x + '%';
             blip.style.top = y + '%';
             
-            // Add text label for green blips occasionally (25% chance)
+            // Check if we should add a text label for green blips (25% chance)
+            let shouldAddLabel = false;
+            let labelName = null;
             if (!isRed && Math.random() < 0.25) {
+                shouldAddLabel = true;
                 const names = ['Luke', 'Ahsoka', 'Boba', 'Grogu'];
-                const randomName = names[Math.floor(Math.random() * names.length)];
-                const label = document.createElement('div');
-                label.className = 'blip-label';
-                label.textContent = randomName;
-                // Position label above the blip using the same x coordinate
-                label.style.left = x + '%';
-                label.style.top = (y - 2) + '%'; // 2% above the blip
-                radarContainer.appendChild(label);
-                
-                // Remove label after animation (same as blip)
-                setTimeout(() => {
-                    if (label.parentNode) {
-                        label.parentNode.removeChild(label);
-                    }
-                }, 3000);
+                labelName = names[Math.floor(Math.random() * names.length)];
             }
             
             // Calculate when sweep will reach this angle, then show blip slightly after
@@ -1096,6 +1085,24 @@
                 if (radarActive && activeBlips[color] < maxBlips) {
                     radarContainer.appendChild(blip);
                     activeBlips[color]++;
+
+                    // Add text label for green blips occasionally
+                    if (shouldAddLabel && labelName) {
+                        const label = document.createElement('div');
+                        label.className = 'blip-label';
+                        label.textContent = labelName;
+                        // Position label above the blip using the same x coordinate
+                        label.style.left = x + '%';
+                        label.style.top = (y - 2) + '%'; // 2% above the blip
+                        radarContainer.appendChild(label);
+                        
+                        // Remove label after animation (same as blip)
+                        setTimeout(() => {
+                            if (label.parentNode) {
+                                label.parentNode.removeChild(label);
+                            }
+                        }, 3000);
+                    }
 
                     // Remove blip after animation
                     setTimeout(() => {
