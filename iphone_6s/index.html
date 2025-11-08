@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mandalorian">
+    <title>Mandalorian Soundboard v5.0 - iPhone</title>
+    <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%);
+            color: #C0C0C0;
+            font-family: 'Arial Black', 'Arial', sans-serif;
+            padding: 15px;
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            /* Prevent iOS bounce scrolling */
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .app-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0 25px 0;
+            color: #4A90E2;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 100%;
+            margin: 0 auto 20px auto;
+            padding: 0 10px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .sound-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            min-height: 70px;
+            border-radius: 15px;
+            border: 2px solid #4A90E2;
+            background: linear-gradient(145deg, #2D2D2D, #1A1A1A);
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sound-btn:hover {
+            border-color: #5BA0F2;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .sound-btn:active {
+            transform: scale(0.95);
+            background: linear-gradient(145deg, #4A90E2, #357ABD);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .sound-btn.playing {
+            background: linear-gradient(145deg, #00FF41, #00CC33);
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .sound-btn.orange.playing {
+            background: linear-gradient(145deg, #FF8C00, #FF7F00) !important;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .sound-btn.toggled-on {
+            background: linear-gradient(145deg, rgba(255, 165, 0, 0.6), rgba(255, 140, 0, 0.4)) !important;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.9), inset 0 0 10px rgba(255, 165, 0, 0.4) !important;
+            border: 4px solid rgba(255, 165, 0, 1) !important;
+            animation: orange-glow 2s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes orange-glow {
+            from {
+                box-shadow: 0 0 20px rgba(255, 165, 0, 0.9), inset 0 0 10px rgba(255, 165, 0, 0.4);
+            }
+            to {
+                box-shadow: 0 0 35px rgba(255, 165, 0, 1), inset 0 0 20px rgba(255, 165, 0, 0.6);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-text {
+            font-size: 24px;
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0px;
+            font-weight: 900;
+            padding: 4px;
+        }
+
+        /* Color variants */
+        .blue { border-color: #4A90E2; }
+        .green { border-color: #00FF41; }
+        .red { border-color: #FF4757; }
+        .yellow { border-color: #FFD700; }
+        .gray { border-color: #5A6C7D; }
+        .orange { border-color: #FF6B35; }
+
+        .volume-control {
+            text-align: center;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .volume-label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4A90E2;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #2D2D2D;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4A90E2;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .sound-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+            
+            .sound-btn {
+                min-height: 65px;
+            }
+            
+            .btn-text {
+                font-size: 20px;
+                font-weight: 900;
+                padding: 3px;
+                line-height: 0.85;
+            }
+            
+            .app-title {
+                font-size: 24px;
+            }
+        }
+
+        /* Landscape mode */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .sound-grid {
+                grid-template-columns: repeat(10, 1fr);
+                gap: 4px;
+            }
+            
+            .sound-btn {
+                min-height: 50px;
+            }
+            
+            .btn-text {
+                font-size: 18px;
+                font-weight: 900;
+                padding: 2px;
+                line-height: 0.8;
+            }
+            
+            .app-title {
+                font-size: 20px;
+                margin: 5px 0 10px 0;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Error state */
+        .error {
+            border-color: #FF4757;
+            background: linear-gradient(145deg, #FF4757, #CC3A47);
+        }
+
+        /* Color legend */
+        .color-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 20px auto;
+            max-width: 600px;
+        }
+
+        .legend-item {
+            font-size: 12px;
+            font-weight: bold;
+            color: #C0C0C0;
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(45, 45, 45, 0.5);
+        }
+
+        /* Audio enable section */
+        .audio-enable-section {
+            text-align: center;
+            margin: 40px auto;
+            max-width: 400px;
+        }
+
+        .enable-audio-btn {
+            background: linear-gradient(145deg, #4A90E2, #357ABD);
+            border: 3px solid #4A90E2;
+            border-radius: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 20px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .enable-audio-btn:hover {
+            background: linear-gradient(145deg, #5BA0F2, #4A90E2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .enable-audio-btn:active {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .audio-help {
+            color: #C0C0C0;
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        /* Offline indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #00FF41;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .offline-indicator.show {
+            display: block;
+        }
+
+        /* Install prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.95);
+            border: 2px solid #4A90E2;
+            border-radius: 15px;
+            padding: 15px;
+            color: #C0C0C0;
+            font-size: 14px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            max-width: 90%;
+        }
+
+        .install-prompt.show {
+            display: block;
+        }
+
+        .install-prompt button {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
+    
+    <h1 class="app-title">🪖 MANDALORIAN v5.0</h1>
+    
+    <div id="audioEnableSection" class="audio-enable-section">
+        <button id="enableAudioBtn" class="enable-audio-btn">
+            🔊 ENABLE AUDIO
+        </button>
+        <p class="audio-help">Tap to enable sounds on your device</p>
+    </div>
+    
+    <div class="color-legend" id="colorLegend" style="display: none;">
+        <div class="legend-item">🔵 MANDO</div>
+        <div class="legend-item">🟢 GROGU</div>
+        <div class="legend-item">🟠 THEMES</div>
+    </div>
+    
+    <div class="sound-grid" id="soundGrid" style="display: none;">
+        <!-- ORANGE = THEMES (Music) -->
+        <button class="sound-btn orange" data-sound="Mando Theme">
+            <div class="btn-text">MANDO<br>THEME</div>
+        </button>
+        
+        <button class="sound-btn orange" data-sound="Mando Flute">
+            <div class="btn-text">MANDO<br>FLUTE</div>
+        </button>
+        
+        <!-- BLUE = MANDO (Din Djarin speaking) -->
+        <button class="sound-btn blue" data-sound="This is the way">
+            <div class="btn-text">THIS IS<br>THE WAY</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="I'm a Mandalorian">
+            <div class="btn-text">I'M A<br>MANDO</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="No droids">
+            <div class="btn-text">NO<br>DROIDS</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Great">
+            <div class="btn-text">GREAT</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Thank you">
+            <div class="btn-text">THANK<br>YOU</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Yes">
+            <div class="btn-text">YES</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Don't touch anything">
+            <div class="btn-text">DON'T<br>TOUCH</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Do not self destruct">
+            <div class="btn-text">NO SELF<br>DESTRUCT</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="I could use a crew">
+            <div class="btn-text">NEED<br>CREW</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="I don't belong here">
+            <div class="btn-text">DON'T<br>BELONG</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Where do you live">
+            <div class="btn-text">WHERE<br>LIVE?</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="Why so slow">
+            <div class="btn-text">WHY SO<br>SLOW?</div>
+        </button>
+        
+        <button class="sound-btn blue" data-sound="You want some soup">
+            <div class="btn-text">WANT<br>SOUP?</div>
+        </button>
+        
+        <!-- GREEN = GROGU (Baby Yoda sounds) -->
+        <button class="sound-btn green" data-sound="Grogu Cooing">
+            <div class="btn-text">GROGU<br>COO</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu giggling">
+            <div class="btn-text">GROGU<br>GIGGLE</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu YES">
+            <div class="btn-text">GROGU<br>YES</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu NO">
+            <div class="btn-text">GROGU<br>NO</div>
+        </button>
+        
+        <button class="sound-btn green" data-sound="Grogu bad baby">
+            <div class="btn-text">BAD<br>BABY</div>
+        </button>
+    </div>
+    
+    <div class="volume-control" id="volumeControl" style="display: none;">
+        <div class="volume-label">🔊 VOLUME</div>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+    </div>
+
+    <script>
+        // Simplified Audio management system with offline support
+        class SoundBoard {
+            constructor() {
+                this.sounds = {};
+                this.currentVolume = 0.8;
+                this.audioEnabled = false;
+                this.audioContext = null;
+                this.currentlyPlaying = null;
+                this.backgroundMusic = null;
+                this.backgroundSounds = ['Mando Theme', 'Mando Flute'];
+                this.problematicSounds = ['Thank you', 'Yes'];
+                this.toggledThemes = {};
+                this.offlineMode = false;
+                this.init();
+            }
+
+            init() {
+                this.setupOfflineDetection();
+                this.setupEnableAudioButton();
+                this.setupVolumeControl();
+                this.setupButtons();
+                this.checkServiceWorker();
+            }
+
+            setupOfflineDetection() {
+                window.addEventListener('online', () => {
+                    this.offlineMode = false;
+                    document.getElementById('offlineIndicator').classList.remove('show');
+                });
+
+                window.addEventListener('offline', () => {
+                    this.offlineMode = true;
+                    document.getElementById('offlineIndicator').classList.add('show');
+                });
+
+                // Check initial state
+                if (!navigator.onLine) {
+                    this.offlineMode = true;
+                    document.getElementById('offlineIndicator').classList.add('show');
+                }
+            }
+
+            checkServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        console.log('Service Worker ready');
+                        // Check if we're in offline mode
+                        if (!navigator.onLine) {
+                            this.offlineMode = true;
+                            document.getElementById('offlineIndicator').classList.add('show');
+                        }
+                    });
+                }
+            }
+
+            setupEnableAudioButton() {
+                const enableBtn = document.getElementById('enableAudioBtn');
+                enableBtn.addEventListener('click', () => {
+                    this.enableAudio();
+                });
+            }
+
+            enableAudio() {
+                try {
+                    console.log('Starting audio enable process...');
+                    
+                    // Create a simple test audio to unlock iOS audio
+                    const testAudio = new Audio();
+                    testAudio.volume = 0.1;
+                    
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    console.log('Test beep played for iOS unlock');
+                    
+                    setTimeout(() => {
+                        this.preloadSounds();
+                        this.showSoundboard();
+                        this.audioEnabled = true;
+                        console.log('Audio system enabled!');
+                    }, 200);
+                } catch (error) {
+                    console.error('Failed to enable audio:', error);
+                    alert('Audio initialization failed. Please try again.');
+                }
+            }
+
+            showSoundboard() {
+                document.getElementById('audioEnableSection').style.display = 'none';
+                document.getElementById('colorLegend').style.display = 'flex';
+                document.getElementById('soundGrid').style.display = 'grid';
+                document.getElementById('volumeControl').style.display = 'block';
+            }
+
+            setupVolumeControl() {
+                const volumeSlider = document.getElementById('volumeSlider');
+                volumeSlider.addEventListener('input', (e) => {
+                    this.currentVolume = e.target.value / 100;
+                    this.updateAllVolumes();
+                });
+            }
+
+            setupButtons() {
+                const buttons = document.querySelectorAll('.sound-btn');
+                console.log(`Setting up ${buttons.length} sound buttons`);
+                
+                buttons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (!this.audioEnabled) {
+                            return;
+                        }
+                        const soundId = button.dataset.sound;
+                        this.playSound(soundId, button);
+                    });
+
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        button.style.transform = 'scale(0.95)';
+                    });
+
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        button.style.transform = 'scale(1)';
+                        
+                        if (this.audioEnabled) {
+                            const soundId = button.dataset.sound;
+                            this.playSound(soundId, button);
+                        }
+                    });
+                });
+            }
+
+            preloadSounds() {
+                const soundFiles = [
+                    'Mando Theme', 'Mando Flute', 'This is the way', "I'm a Mandalorian",
+                    'No droids', 'Great', 'Thank you', 'Yes', "Don't touch anything",
+                    'Do not self destruct', 'I could use a crew', "I don't belong here",
+                    'Where do you live', 'Why so slow', 'You want some soup',
+                    'Grogu Cooing', 'Grogu giggling', 'Grogu YES', 'Grogu NO', 'Grogu bad baby'
+                ];
+
+                soundFiles.forEach(soundId => {
+                    // Use relative path for offline support
+                    const audio = new Audio(`Sounds/${soundId}.mp3`);
+                    audio.preload = 'auto';
+                    audio.volume = this.currentVolume;
+                    this.sounds[soundId] = audio;
+                    
+                    if (this.problematicSounds.includes(soundId)) {
+                        const duplicateAudio = new Audio(`Sounds/${soundId}.mp3`);
+                        duplicateAudio.preload = 'auto';
+                        duplicateAudio.volume = this.currentVolume;
+                        this.sounds[soundId + '_duplicate'] = duplicateAudio;
+                    }
+                    
+                    audio.addEventListener('error', (e) => {
+                        console.error(`Failed to load: ${soundId}.mp3`, e);
+                    });
+
+                    audio.addEventListener('ended', () => {
+                        if (this.currentlyPlaying === audio) {
+                            this.currentlyPlaying = null;
+                        }
+                        if (this.backgroundMusic === audio) {
+                            this.backgroundMusic = null;
+                        }
+                    });
+                });
+
+                console.log(`Preloading ${soundFiles.length} audio files...`);
+            }
+
+            playSound(soundId, buttonElement) {
+                if (!this.audioEnabled) {
+                    return;
+                }
+
+                try {
+                    const isBackgroundSound = this.backgroundSounds.includes(soundId);
+
+                    if (isBackgroundSound) {
+                        if (this.toggledThemes[soundId]) {
+                            this.stopBackgroundMusic();
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
+                            
+                            buttonElement.classList.add('playing');
+                            setTimeout(() => {
+                                buttonElement.classList.remove('playing');
+                            }, 200);
+                        } else {
+                            Object.keys(this.toggledThemes).forEach(themeId => {
+                                if (themeId !== soundId && this.toggledThemes[themeId]) {
+                                    this.toggledThemes[themeId] = false;
+                                    const otherButton = document.querySelector(`[data-sound="${themeId}"]`);
+                                    if (otherButton) {
+                                        otherButton.classList.remove('toggled-on');
+                                    }
+                                }
+                            });
+                            
+                            this.toggledThemes[soundId] = true;
+                            buttonElement.classList.add('toggled-on');
+                            
+                            if (this.sounds[soundId]) {
+                                const audio = this.sounds[soundId];
+                                this.playBackgroundMusicWithLoop(soundId, audio, buttonElement);
+                            }
+                        }
+                    } else {
+                        buttonElement.classList.add('playing');
+                        setTimeout(() => {
+                            buttonElement.classList.remove('playing');
+                        }, 500);
+
+                        this.stopCurrentSound();
+                        
+                        if (this.sounds[soundId]) {
+                            const audio = this.sounds[soundId];
+                            this.playRegularSound(soundId, audio, buttonElement);
+                        } else {
+                            console.error(`Sound not found: ${soundId}`);
+                            this.showError(buttonElement);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error playing sound: ${error.message}`);
+                    this.showError(buttonElement);
+                }
+            }
+
+            stopBackgroundMusic(clearAllToggles = false) {
+                if (this.backgroundMusic) {
+                    try {
+                        this.backgroundMusic.pause();
+                        this.backgroundMusic.currentTime = 0;
+                        this.backgroundMusic.loop = false;
+                    } catch (error) {
+                        console.error(`Error stopping background music: ${error.message}`);
+                    }
+                    this.backgroundMusic = null;
+                }
+                
+                if (clearAllToggles) {
+                    Object.keys(this.toggledThemes).forEach(themeId => {
+                        this.toggledThemes[themeId] = false;
+                        const themeButton = document.querySelector(`[data-sound="${themeId}"]`);
+                        if (themeButton) {
+                            themeButton.classList.remove('toggled-on');
+                        }
+                    });
+                }
+            }
+
+            playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
+                this.stopBackgroundMusic(false);
+
+                setTimeout(() => {
+                    audio.volume = this.currentVolume * 0.7;
+                    audio.currentTime = 0;
+                    audio.loop = true;
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.backgroundMusic = audio;
+                            console.log(`Background music playing: ${soundId}`);
+                        }).catch(error => {
+                            console.error(`Background music failed: ${error.message}`);
+                            this.backgroundMusic = null;
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
+                            this.showError(buttonElement);
+                        });
+                    }
+                }, 100);
+            }
+
+            playRegularSound(soundId, audio, buttonElement) {
+                const isProblematic = this.problematicSounds.includes(soundId);
+                let audioToUse = audio;
+                
+                if (isProblematic && this.backgroundMusic) {
+                    const duplicateKey = soundId + '_duplicate';
+                    if (this.sounds[duplicateKey]) {
+                        audioToUse = this.sounds[duplicateKey];
+                    }
+                }
+                
+                const baseDelay = this.backgroundMusic ? 150 : 50;
+                const delay = isProblematic ? baseDelay + 50 : baseDelay;
+                
+                setTimeout(() => {
+                    this.attemptPlayRegularSound(soundId, audioToUse, buttonElement, isProblematic);
+                }, delay);
+            }
+
+            attemptPlayRegularSound(soundId, audio, buttonElement, isProblematic) {
+                audio.volume = this.currentVolume;
+                audio.currentTime = 0;
+                
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        this.currentlyPlaying = audio;
+                        console.log(`Playing: ${soundId}`);
+                    }).catch(error => {
+                        console.error(`Play failed: ${error.message}`);
+                        this.currentlyPlaying = null;
+                        this.showError(buttonElement);
+                    });
+                }
+            }
+
+            stopCurrentSound() {
+                if (this.currentlyPlaying) {
+                    try {
+                        this.currentlyPlaying.pause();
+                        this.currentlyPlaying.currentTime = 0;
+                    } catch (error) {
+                        console.error(`Error stopping sound: ${error.message}`);
+                    }
+                    this.currentlyPlaying = null;
+                }
+            }
+
+            updateAllVolumes() {
+                Object.values(this.sounds).forEach(audio => {
+                    if (audio && typeof audio.volume !== 'undefined') {
+                        if (this.backgroundMusic === audio) {
+                            audio.volume = this.currentVolume * 0.7;
+                        } else {
+                            audio.volume = this.currentVolume;
+                        }
+                    }
+                });
+            }
+
+            showError(buttonElement) {
+                buttonElement.classList.add('error');
+                setTimeout(() => {
+                    buttonElement.classList.remove('error');
+                }, 1000);
+            }
+        }
+
+        // Initialize the soundboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SoundBoard();
+        });
+
+        // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Service Worker registration for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
+
