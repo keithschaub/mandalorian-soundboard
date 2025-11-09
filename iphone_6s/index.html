@@ -1058,8 +1058,10 @@
             // Random position within radar circle (can extend beyond visible area)
             const angle = targetAngle !== null ? targetAngle : (Math.random() * Math.PI * 2);
             // Use power distribution to favor outer circles (ensures blips appear in all 5 circles)
-            // Math.pow(Math.random(), 0.5) gives more values in outer range, ensuring outer circles are used
-            const distance = Math.pow(Math.random(), 0.5) * 0.95 + 0.05; // 5% to 100% from center, biased toward outer areas
+            // Ring 1: 16.5% radius, Ring 2: 33% radius, Ring 3: 50% radius, Ring 4: 66.5% radius, Ring 5: 83% radius
+            // To reach Ring 5 (83% radius), we need distance * 50 = 83, so distance = 1.66
+            // Using 0.05 to 1.9 range to ensure we reach all 5 rings and even go slightly beyond
+            const distance = Math.pow(Math.random(), 0.5) * 1.85 + 0.05; // 5% to 190% from center, biased toward outer areas
             const centerX = 50;
             const centerY = 50;
             
