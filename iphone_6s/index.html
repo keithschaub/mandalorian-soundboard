@@ -1019,7 +1019,7 @@
         const MAX_RED_BLIPS = 4;
         const SWEEP_DURATION = 3000; // 3 seconds for full rotation
         let radarStartTime = Date.now();
-        const AVAILABLE_NAMES = ['Luke', 'Ahsoka', 'Boba', 'Grogu'];
+        const AVAILABLE_NAMES = ['Luke', 'Ahsoka', 'Boba', 'Grogu', 'Leo', 'Sexy Bo-Katan', 'Greef', 'Fennec', 'Cara', 'IG-11', 'Kuiil'];
         let activeNames = new Set(); // Track which names are currently displayed
 
         // Get current radar sweep angle (0 to 2π)
@@ -1067,10 +1067,10 @@
             blip.style.left = x + '%';
             blip.style.top = y + '%';
             
-            // Check if we should add a text label for green blips (25% chance)
+            // Check if we should add a text label for green blips (50% chance - increased since we have more names)
             let shouldAddLabel = false;
             let labelName = null;
-            if (!isRed && Math.random() < 0.25) {
+            if (!isRed && Math.random() < 0.5) {
                 // Get available names (not currently displayed)
                 const availableNames = AVAILABLE_NAMES.filter(name => !activeNames.has(name));
                 
