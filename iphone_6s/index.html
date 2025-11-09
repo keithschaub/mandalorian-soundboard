@@ -1057,7 +1057,9 @@
             
             // Random position within radar circle (can extend beyond visible area)
             const angle = targetAngle !== null ? targetAngle : (Math.random() * Math.PI * 2);
-            const distance = Math.random() * 0.95 + 0.05; // 5% to 100% from center (fills entire screen including outer rings)
+            // Use power distribution to favor outer circles (ensures blips appear in all 5 circles)
+            // Math.pow(Math.random(), 0.5) gives more values in outer range, ensuring outer circles are used
+            const distance = Math.pow(Math.random(), 0.5) * 0.95 + 0.05; // 5% to 100% from center, biased toward outer areas
             const centerX = 50;
             const centerY = 50;
             
