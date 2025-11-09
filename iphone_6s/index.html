@@ -1019,6 +1019,8 @@
         const MAX_RED_BLIPS = 4;
         const SWEEP_DURATION = 3000; // 3 seconds for full rotation
         let radarStartTime = Date.now();
+        const AVAILABLE_NAMES = ['Luke', 'Ahsoka', 'Boba', 'Grogu'];
+        let activeNames = new Set(); // Track which names are currently displayed
 
         // Get current radar sweep angle (0 to 2π)
         function getCurrentSweepAngle() {
@@ -1069,9 +1071,14 @@
             let shouldAddLabel = false;
             let labelName = null;
             if (!isRed && Math.random() < 0.25) {
-                shouldAddLabel = true;
-                const names = ['Luke', 'Ahsoka', 'Boba', 'Grogu'];
-                labelName = names[Math.floor(Math.random() * names.length)];
+                // Get available names (not currently displayed)
+                const availableNames = AVAILABLE_NAMES.filter(name => !activeNames.has(name));
+                
+                // Only add label if there are available names
+                if (availableNames.length > 0) {
+                    shouldAddLabel = true;
+                    labelName = availableNames[Math.floor(Math.random() * availableNames.length)];
+                }
             }
             
             // Calculate when sweep will reach this angle, then show blip slightly after
@@ -1089,6 +1096,9 @@
 
                     // Add text label for green blips occasionally
                     if (shouldAddLabel && labelName) {
+                        // Mark this name as active
+                        activeNames.add(labelName);
+                        
                         const label = document.createElement('div');
                         label.className = 'blip-label';
                         label.textContent = labelName;
@@ -1102,6 +1112,8 @@
                             if (label.parentNode) {
                                 label.parentNode.removeChild(label);
                             }
+                            // Remove name from active set
+                            activeNames.delete(labelName);
                         }, 6000);
                     }
 
@@ -1151,6 +1163,7 @@
             document.getElementById('soundboardScreen').style.display = 'none';
             radarActive = true;
             radarStartTime = Date.now(); // Reset sweep timing
+            activeNames.clear(); // Clear active names when radar resets
             startBlips();
             clearTimeout(inactivityTimer);
         }
