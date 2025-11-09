@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.1 - iPhone</title>
+    <title>Mandalorian Soundboard v5.2 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -156,6 +156,9 @@
             background: #2D2D2D;
             outline: none;
             -webkit-appearance: none;
+            appearance: none;
+            touch-action: pan-x;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .volume-slider::-webkit-slider-thumb {
@@ -545,7 +548,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.1</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.2</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -743,10 +746,24 @@
 
             setupVolumeControl() {
                 const volumeSlider = document.getElementById('volumeSlider');
-                volumeSlider.addEventListener('input', (e) => {
-                    this.currentVolume = e.target.value / 100;
+                if (!volumeSlider) {
+                    console.error('Volume slider not found!');
+                    return;
+                }
+                
+                // Handle both input and change events for better mobile support
+                const updateVolume = (e) => {
+                    const newVolume = parseFloat(e.target.value) / 100;
+                    this.currentVolume = newVolume;
+                    console.log(`Volume changed to: ${newVolume} (${e.target.value}%)`);
                     this.updateAllVolumes();
-                });
+                };
+                
+                volumeSlider.addEventListener('input', updateVolume);
+                volumeSlider.addEventListener('change', updateVolume);
+                
+                // Also handle touch events for better mobile responsiveness
+                volumeSlider.addEventListener('touchmove', updateVolume);
             }
 
             setupButtons() {
@@ -975,6 +992,7 @@
             }
 
             updateAllVolumes() {
+                // Update all preloaded sounds
                 Object.values(this.sounds).forEach(audio => {
                     if (audio && typeof audio.volume !== 'undefined') {
                         if (this.backgroundMusic === audio) {
@@ -984,6 +1002,16 @@
                         }
                     }
                 });
+                
+                // Explicitly update currently playing sound if it exists
+                if (this.currentlyPlaying && typeof this.currentlyPlaying.volume !== 'undefined') {
+                    this.currentlyPlaying.volume = this.currentVolume;
+                }
+                
+                // Explicitly update background music if it exists
+                if (this.backgroundMusic && typeof this.backgroundMusic.volume !== 'undefined') {
+                    this.backgroundMusic.volume = this.currentVolume * 0.7;
+                }
             }
 
             showError(buttonElement) {
