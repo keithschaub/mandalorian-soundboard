@@ -1,5 +1,5 @@
 // Enhanced Service Worker for offline functionality - iPhone 6s version
-const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.6.9';
+const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.7.0';
 // Get the base path where the service worker is located
 const BASE_PATH = self.location.pathname.replace('/sw.js', '');
 const urlsToCache = [
