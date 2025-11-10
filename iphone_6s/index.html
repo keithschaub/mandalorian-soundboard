@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.8.4 - iPhone</title>
+    <title>Mandalorian Soundboard v5.8.5 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -539,7 +539,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.8.4</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.8.5</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -909,63 +909,67 @@
                 this.stopBackgroundMusic(false);
 
                 setTimeout(() => {
-                    // Remove any existing event listeners to avoid duplicates
-                    const newAudio = audio.cloneNode();
-                    newAudio.src = audio.src;
-                    newAudio.preload = 'auto';
-                    newAudio.volume = this.currentVolume * 0.7;
-                    
-                    // Store reference to the new audio element
-                    this.sounds[soundId] = newAudio;
+                    // Use the original audio element, don't clone it
+                    audio.volume = this.currentVolume * 0.7;
+                    audio.currentTime = 0;
                     
                     // Handle loop transition smoothly to avoid crackling at the end
-                    // Restart 2.5 seconds before the end to avoid the problematic last 2 seconds
+                    // Restart 3 seconds before the end to avoid the problematic last 2 seconds
                     let restartTime = null;
                     let loopHandler = null;
+                    let isRestarting = false;
                     
                     const setupLoopHandler = () => {
-                        if (newAudio.duration && !restartTime) {
-                            restartTime = newAudio.duration - 3.0; // Restart 3 seconds before end to avoid last 2 seconds
+                        if (audio.duration && !restartTime && !isRestarting) {
+                            restartTime = audio.duration - 3.0; // Restart 3 seconds before end
                             
                             loopHandler = () => {
-                                // If we're past the restart point, jump back to start
-                                if (newAudio.currentTime >= restartTime) {
-                                    newAudio.currentTime = 0;
+                                // Check more frequently and restart before reaching the end
+                                if (audio.duration && audio.currentTime >= restartTime && !isRestarting) {
+                                    isRestarting = true;
+                                    // Pause briefly to avoid crackling
+                                    audio.pause();
+                                    audio.currentTime = 0;
+                                    // Small delay then resume
+                                    setTimeout(() => {
+                                        audio.play().then(() => {
+                                            isRestarting = false;
+                                        }).catch(e => {
+                                            console.error(`Loop restart failed: ${e.message}`);
+                                            isRestarting = false;
+                                        });
+                                    }, 10);
                                 }
                             };
                             
-                            newAudio.addEventListener('timeupdate', loopHandler);
+                            audio.addEventListener('timeupdate', loopHandler);
                         }
                     };
                     
                     // Try to set up immediately if duration is available
-                    if (newAudio.readyState >= 1) {
+                    if (audio.readyState >= 1 && audio.duration) {
                         setupLoopHandler();
                     }
                     
                     // Also listen for when metadata is loaded
-                    newAudio.addEventListener('loadedmetadata', setupLoopHandler);
-                    
-                    // And listen for canplay in case duration isn't available yet
-                    newAudio.addEventListener('canplay', setupLoopHandler);
+                    audio.addEventListener('loadedmetadata', setupLoopHandler, { once: true });
                     
                     // Also handle ended event as backup
-                    newAudio.addEventListener('ended', () => {
-                        if (this.backgroundMusic === newAudio) {
-                            newAudio.currentTime = 0;
-                            newAudio.play().catch(e => {
+                    audio.addEventListener('ended', () => {
+                        if (this.backgroundMusic === audio && !isRestarting) {
+                            audio.currentTime = 0;
+                            audio.play().catch(e => {
                                 console.error(`Loop restart failed: ${e.message}`);
                             });
                         }
                     });
                     
-                    newAudio.currentTime = 0;
-                    newAudio.loop = false; // We'll handle looping manually
+                    audio.loop = false; // We'll handle looping manually
                     
-                    const playPromise = newAudio.play();
+                    const playPromise = audio.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            this.backgroundMusic = newAudio;
+                            this.backgroundMusic = audio;
                             console.log(`Background music playing: ${soundId}`);
                         }).catch(error => {
                             console.error(`Background music failed: ${error.message}`);
