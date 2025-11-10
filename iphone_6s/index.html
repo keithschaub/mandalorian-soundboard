@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.5 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.5</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -818,37 +818,26 @@
                     return;
                 }
                 
-                // Handle both input and change events for better mobile support
-                const updateVolume = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const sliderValue = e.target.value || e.target.valueAsNumber || volumeSlider.value;
+                // Simple, reliable volume update function
+                const updateVolume = () => {
+                    const sliderValue = volumeSlider.value;
                     const newVolume = parseFloat(sliderValue) / 100;
                     this.currentVolume = Math.max(0, Math.min(1, newVolume)); // Clamp between 0 and 1
-                    console.log(`Volume changed to: ${this.currentVolume} (${sliderValue}%)`);
-                    this.updateAllVolumes();
+                    console.log(`Volume slider moved to: ${this.currentVolume} (${sliderValue}%)`);
                     
-                    // Test volume change immediately with a test sound if available
-                    if (this.audioEnabled && Object.keys(this.sounds).length > 0) {
-                        const testSound = Object.values(this.sounds)[0];
-                        if (testSound && testSound.paused) {
-                            testSound.volume = this.currentVolume;
-                        }
-                    }
+                    // Immediately update all volumes
+                    this.updateAllVolumes();
                 };
                 
-                // Use capture phase and multiple event types for maximum compatibility
-                volumeSlider.addEventListener('input', updateVolume, { passive: false });
-                volumeSlider.addEventListener('change', updateVolume, { passive: false });
-                volumeSlider.addEventListener('touchmove', updateVolume, { passive: false });
-                volumeSlider.addEventListener('touchend', updateVolume, { passive: false });
+                // Use input event - fires continuously as slider moves
+                volumeSlider.addEventListener('input', updateVolume);
                 
-                // Also handle mousemove for desktop testing
-                volumeSlider.addEventListener('mousemove', (e) => {
-                    if (e.buttons === 1) { // Only if mouse button is pressed
-                        updateVolume(e);
-                    }
-                }, { passive: false });
+                // Use change event - fires when slider is released
+                volumeSlider.addEventListener('change', updateVolume);
+                
+                // For mobile touch support
+                volumeSlider.addEventListener('touchmove', updateVolume);
+                volumeSlider.addEventListener('touchend', updateVolume);
             }
 
             setupButtons() {
@@ -1077,31 +1066,25 @@
             }
 
             updateAllVolumes() {
-                console.log(`Updating all volumes to: ${this.currentVolume}`);
-                
                 // Update all preloaded sounds
                 Object.values(this.sounds).forEach(audio => {
                     if (audio && typeof audio.volume !== 'undefined') {
                         if (this.backgroundMusic === audio) {
                             audio.volume = this.currentVolume * 0.7;
-                            console.log(`Updated background music volume to: ${audio.volume}`);
                         } else {
                             audio.volume = this.currentVolume;
-                            console.log(`Updated sound volume to: ${audio.volume}`);
                         }
                     }
                 });
                 
-                // Explicitly update currently playing sound if it exists
+                // CRITICAL: Update currently playing sound immediately
                 if (this.currentlyPlaying && typeof this.currentlyPlaying.volume !== 'undefined') {
                     this.currentlyPlaying.volume = this.currentVolume;
-                    console.log(`Updated currently playing volume to: ${this.currentlyPlaying.volume}`);
                 }
                 
-                // Explicitly update background music if it exists
+                // CRITICAL: Update background music immediately
                 if (this.backgroundMusic && typeof this.backgroundMusic.volume !== 'undefined') {
                     this.backgroundMusic.volume = this.currentVolume * 0.7;
-                    console.log(`Updated background music volume to: ${this.backgroundMusic.volume}`);
                 }
             }
 
