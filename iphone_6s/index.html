@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.3 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.4 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.3</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.4</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -818,66 +818,96 @@
                 const setupSlider = () => {
                     const volumeSlider = document.getElementById('volumeSlider');
                     if (!volumeSlider) {
+                        console.log('[VOLUME DEBUG] Slider not found, retrying...');
                         setTimeout(setupSlider, 100);
                         return;
                     }
                     
+                    console.log('[VOLUME DEBUG] Slider found! Setting up...');
+                    console.log('[VOLUME DEBUG] Current volume:', self.currentVolume);
+                    console.log('[VOLUME DEBUG] Sounds loaded:', Object.keys(self.sounds).length);
+                    console.log('[VOLUME DEBUG] Slider value:', volumeSlider.value);
+                    
+                    // Test function to directly set volume
+                    window.testVolume = function(vol) {
+                        console.log('[VOLUME TEST] Setting volume to:', vol);
+                        self.currentVolume = vol;
+                        for (const soundId in self.sounds) {
+                            const audio = self.sounds[soundId];
+                            if (audio) {
+                                audio.volume = vol;
+                                console.log('[VOLUME TEST] Set', soundId, 'to', audio.volume);
+                            }
+                        }
+                        if (self.currentlyPlaying) {
+                            self.currentlyPlaying.volume = vol;
+                            console.log('[VOLUME TEST] Set currently playing to', vol);
+                        }
+                    };
+                    console.log('[VOLUME DEBUG] Test function available: window.testVolume(0.5)');
+                    
                     // Simple event handler - directly update all audio elements
-                    volumeSlider.addEventListener('input', function() {
+                    const inputHandler = function() {
                         const sliderValue = parseFloat(this.value);
                         const newVolume = sliderValue / 100; // Convert 0-100 to 0-1
+                        console.log('[VOLUME DEBUG] INPUT EVENT FIRED! Value:', sliderValue, 'Volume:', newVolume);
+                        
                         self.currentVolume = newVolume;
                         
+                        let updatedCount = 0;
                         // Update ALL audio elements directly
                         for (const soundId in self.sounds) {
                             const audio = self.sounds[soundId];
                             if (audio && audio.volume !== undefined) {
                                 if (self.backgroundMusic === audio) {
                                     audio.volume = newVolume * 0.7;
+                                    console.log('[VOLUME DEBUG] Updated background music:', soundId, 'to', audio.volume);
                                 } else {
                                     audio.volume = newVolume;
+                                    updatedCount++;
                                 }
                             }
                         }
+                        console.log('[VOLUME DEBUG] Updated', updatedCount, 'preloaded sounds');
                         
                         // Update currently playing
                         if (self.currentlyPlaying) {
+                            const oldVol = self.currentlyPlaying.volume;
                             self.currentlyPlaying.volume = newVolume;
+                            console.log('[VOLUME DEBUG] Updated currently playing from', oldVol, 'to', self.currentlyPlaying.volume);
+                        } else {
+                            console.log('[VOLUME DEBUG] No currently playing sound');
                         }
                         
                         // Update background music
                         if (self.backgroundMusic) {
+                            const oldVol = self.backgroundMusic.volume;
                             self.backgroundMusic.volume = newVolume * 0.7;
+                            console.log('[VOLUME DEBUG] Updated background music from', oldVol, 'to', self.backgroundMusic.volume);
+                        } else {
+                            console.log('[VOLUME DEBUG] No background music');
                         }
-                    });
+                    };
+                    
+                    volumeSlider.addEventListener('input', inputHandler);
+                    console.log('[VOLUME DEBUG] Added input event listener');
                     
                     // Also handle change event
                     volumeSlider.addEventListener('change', function() {
-                        const sliderValue = parseFloat(this.value);
-                        const newVolume = sliderValue / 100;
-                        self.currentVolume = newVolume;
-                        
-                        for (const soundId in self.sounds) {
-                            const audio = self.sounds[soundId];
-                            if (audio && audio.volume !== undefined) {
-                                if (self.backgroundMusic === audio) {
-                                    audio.volume = newVolume * 0.7;
-                                } else {
-                                    audio.volume = newVolume;
-                                }
-                            }
-                        }
-                        
-                        if (self.currentlyPlaying) {
-                            self.currentlyPlaying.volume = newVolume;
-                        }
-                        
-                        if (self.backgroundMusic) {
-                            self.backgroundMusic.volume = newVolume * 0.7;
-                        }
+                        console.log('[VOLUME DEBUG] CHANGE EVENT FIRED!');
+                        inputHandler.call(this);
+                    });
+                    console.log('[VOLUME DEBUG] Added change event listener');
+                    
+                    // Test if slider is working
+                    volumeSlider.addEventListener('mousedown', function() {
+                        console.log('[VOLUME DEBUG] Mouse down on slider');
+                    });
+                    volumeSlider.addEventListener('touchstart', function() {
+                        console.log('[VOLUME DEBUG] Touch start on slider');
                     });
                     
-                    console.log('Volume slider setup complete');
+                    console.log('[VOLUME DEBUG] Volume slider setup complete');
                 };
                 
                 setupSlider();
@@ -1342,6 +1372,29 @@
 
         // Initialize radar on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // DEBUG: Allow bypassing radar screen with keyboard
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 's' || e.key === 'S') {
+                    console.log('[DEBUG] Bypassing radar screen');
+                    showSoundboard();
+                }
+            });
+            
+            // DEBUG: Allow bypassing radar screen with double-click
+            let clickCount = 0;
+            let clickTimer = null;
+            document.getElementById('radarScreen').addEventListener('click', (e) => {
+                clickCount++;
+                if (clickTimer) clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    if (clickCount >= 2) {
+                        console.log('[DEBUG] Double-click detected, bypassing radar screen');
+                        showSoundboard();
+                    }
+                    clickCount = 0;
+                }, 300);
+            });
+            
             // Start blips
             startBlips();
             
