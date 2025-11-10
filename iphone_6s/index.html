@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.4 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.5 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.4</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.5</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -719,6 +719,7 @@
         class SoundBoard {
             constructor() {
                 this.sounds = {};
+                this.gainNodes = {}; // Store GainNodes for iOS volume control
                 this.currentVolume = 0.8;
                 this.audioEnabled = false;
                 this.audioContext = null;
@@ -728,6 +729,7 @@
                 this.problematicSounds = ['Thank you', 'Yes'];
                 this.toggledThemes = {};
                 this.offlineMode = false;
+                this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 this.init();
             }
 
@@ -775,24 +777,30 @@
                 try {
                     console.log('Starting audio enable process...');
                     
+                    // Create AudioContext for iOS volume control
+                    if (this.isIOS && !this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        console.log('[VOLUME DEBUG] iOS detected, created AudioContext for volume control');
+                    }
+                    
                     // Create a simple test audio to unlock iOS audio
                     const testAudio = new Audio();
                     testAudio.volume = 0.1;
                     
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+                    const testContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = testContext.createOscillator();
+                    const gainNode = testContext.createGain();
                     
                     oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                    gainNode.connect(testContext.destination);
                     
-                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(440, testContext.currentTime);
                     oscillator.type = 'sine';
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, testContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, testContext.currentTime + 0.1);
                     
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.1);
+                    oscillator.start(testContext.currentTime);
+                    oscillator.stop(testContext.currentTime + 0.1);
                     console.log('Test beep played for iOS unlock');
                     
                     setTimeout(() => {
@@ -851,41 +859,94 @@
                         const sliderValue = parseFloat(this.value);
                         const newVolume = sliderValue / 100; // Convert 0-100 to 0-1
                         console.log('[VOLUME DEBUG] INPUT EVENT FIRED! Value:', sliderValue, 'Volume:', newVolume);
+                        console.log('[VOLUME DEBUG] iOS:', self.isIOS);
                         
                         self.currentVolume = newVolume;
                         
-                        let updatedCount = 0;
-                        // Update ALL audio elements directly
-                        for (const soundId in self.sounds) {
-                            const audio = self.sounds[soundId];
-                            if (audio && audio.volume !== undefined) {
-                                if (self.backgroundMusic === audio) {
-                                    audio.volume = newVolume * 0.7;
-                                    console.log('[VOLUME DEBUG] Updated background music:', soundId, 'to', audio.volume);
-                                } else {
-                                    audio.volume = newVolume;
+                        // On iOS, use GainNode; otherwise use audio.volume
+                        if (self.isIOS && self.audioContext) {
+                            // Resume audio context if suspended
+                            if (self.audioContext.state === 'suspended') {
+                                self.audioContext.resume().then(() => {
+                                    console.log('[VOLUME DEBUG] Audio context resumed');
+                                }).catch(e => {
+                                    console.error('[VOLUME DEBUG] Failed to resume audio context:', e);
+                                });
+                            }
+                            
+                            // Update ALL GainNodes on iOS
+                            let updatedCount = 0;
+                            for (const soundId in self.gainNodes) {
+                                const gainNode = self.gainNodes[soundId];
+                                if (gainNode) {
+                                    const audio = self.sounds[soundId];
+                                    if (audio && self.backgroundMusic === audio) {
+                                        gainNode.gain.value = newVolume * 0.7;
+                                        console.log(`[VOLUME DEBUG] Updated background music GainNode for ${soundId} to ${gainNode.gain.value}`);
+                                    } else {
+                                        gainNode.gain.value = newVolume;
+                                        console.log(`[VOLUME DEBUG] Updated GainNode for ${soundId} to ${gainNode.gain.value}`);
+                                    }
                                     updatedCount++;
                                 }
                             }
-                        }
-                        console.log('[VOLUME DEBUG] Updated', updatedCount, 'preloaded sounds');
-                        
-                        // Update currently playing
-                        if (self.currentlyPlaying) {
-                            const oldVol = self.currentlyPlaying.volume;
-                            self.currentlyPlaying.volume = newVolume;
-                            console.log('[VOLUME DEBUG] Updated currently playing from', oldVol, 'to', self.currentlyPlaying.volume);
+                            
+                            // Also check currentlyPlaying and backgroundMusic by direct reference
+                            if (self.currentlyPlaying) {
+                                for (const soundId in self.sounds) {
+                                    if (self.sounds[soundId] === self.currentlyPlaying && self.gainNodes[soundId]) {
+                                        self.gainNodes[soundId].gain.value = newVolume;
+                                        console.log(`[VOLUME DEBUG] Updated currently playing GainNode for ${soundId} to ${newVolume}`);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (self.backgroundMusic) {
+                                for (const soundId in self.sounds) {
+                                    if (self.sounds[soundId] === self.backgroundMusic && self.gainNodes[soundId]) {
+                                        self.gainNodes[soundId].gain.value = newVolume * 0.7;
+                                        console.log(`[VOLUME DEBUG] Updated background music GainNode for ${soundId} to ${newVolume * 0.7}`);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            console.log(`[VOLUME DEBUG] Updated ${updatedCount} GainNodes total`);
                         } else {
-                            console.log('[VOLUME DEBUG] No currently playing sound');
-                        }
-                        
-                        // Update background music
-                        if (self.backgroundMusic) {
-                            const oldVol = self.backgroundMusic.volume;
-                            self.backgroundMusic.volume = newVolume * 0.7;
-                            console.log('[VOLUME DEBUG] Updated background music from', oldVol, 'to', self.backgroundMusic.volume);
-                        } else {
-                            console.log('[VOLUME DEBUG] No background music');
+                            // Update ALL audio elements directly (non-iOS)
+                            let updatedCount = 0;
+                            for (const soundId in self.sounds) {
+                                const audio = self.sounds[soundId];
+                                if (audio && audio.volume !== undefined) {
+                                    if (self.backgroundMusic === audio) {
+                                        audio.volume = newVolume * 0.7;
+                                        console.log('[VOLUME DEBUG] Updated background music:', soundId, 'to', audio.volume);
+                                    } else {
+                                        audio.volume = newVolume;
+                                        updatedCount++;
+                                    }
+                                }
+                            }
+                            console.log('[VOLUME DEBUG] Updated', updatedCount, 'preloaded sounds');
+                            
+                            // Update currently playing
+                            if (self.currentlyPlaying) {
+                                const oldVol = self.currentlyPlaying.volume;
+                                self.currentlyPlaying.volume = newVolume;
+                                console.log('[VOLUME DEBUG] Updated currently playing from', oldVol, 'to', self.currentlyPlaying.volume);
+                            } else {
+                                console.log('[VOLUME DEBUG] No currently playing sound');
+                            }
+                            
+                            // Update background music
+                            if (self.backgroundMusic) {
+                                const oldVol = self.backgroundMusic.volume;
+                                self.backgroundMusic.volume = newVolume * 0.7;
+                                console.log('[VOLUME DEBUG] Updated background music from', oldVol, 'to', self.backgroundMusic.volume);
+                            } else {
+                                console.log('[VOLUME DEBUG] No background music');
+                            }
                         }
                     };
                     
@@ -1069,8 +1130,29 @@
             playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
                 this.stopBackgroundMusic(false);
 
+                // On iOS, create MediaElementSource and GainNode on first play
+                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
+                    try {
+                        if (this.audioContext.state === 'suspended') {
+                            this.audioContext.resume();
+                        }
+                        const source = this.audioContext.createMediaElementSource(audio);
+                        const gainNode = this.audioContext.createGain();
+                        gainNode.gain.value = this.currentVolume * 0.7;
+                        source.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        this.gainNodes[soundId] = gainNode;
+                        audio._mediaSourceCreated = true;
+                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId} on first play, gain: ${gainNode.gain.value}`);
+                    } catch (e) {
+                        console.error(`[VOLUME DEBUG] Failed to create GainNode for ${soundId}:`, e);
+                    }
+                }
+
                 setTimeout(() => {
-                    audio.volume = this.currentVolume * 0.7;
+                    if (!this.isIOS) {
+                        audio.volume = this.currentVolume * 0.7;
+                    }
                     audio.currentTime = 0;
                     audio.loop = true;
                     
@@ -1110,7 +1192,28 @@
             }
 
             attemptPlayRegularSound(soundId, audio, buttonElement, isProblematic) {
-                audio.volume = this.currentVolume;
+                // On iOS, create MediaElementSource and GainNode on first play
+                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
+                    try {
+                        if (this.audioContext.state === 'suspended') {
+                            this.audioContext.resume();
+                        }
+                        const source = this.audioContext.createMediaElementSource(audio);
+                        const gainNode = this.audioContext.createGain();
+                        gainNode.gain.value = this.currentVolume;
+                        source.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        this.gainNodes[soundId] = gainNode;
+                        audio._mediaSourceCreated = true;
+                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId} on first play, gain: ${gainNode.gain.value}`);
+                    } catch (e) {
+                        console.error(`[VOLUME DEBUG] Failed to create GainNode for ${soundId}:`, e);
+                    }
+                }
+                
+                if (!this.isIOS) {
+                    audio.volume = this.currentVolume;
+                }
                 audio.currentTime = 0;
                 
                 const playPromise = audio.play();
@@ -1139,25 +1242,41 @@
             }
 
             updateAllVolumes() {
-                // Update all preloaded sounds
-                Object.values(this.sounds).forEach(audio => {
-                    if (audio && typeof audio.volume !== 'undefined') {
-                        if (this.backgroundMusic === audio) {
-                            audio.volume = this.currentVolume * 0.7;
-                        } else {
-                            audio.volume = this.currentVolume;
+                // On iOS, update GainNodes; otherwise update audio.volume
+                if (this.isIOS && this.audioContext) {
+                    // Update all GainNodes
+                    for (const soundId in this.gainNodes) {
+                        const gainNode = this.gainNodes[soundId];
+                        if (gainNode) {
+                            const audio = this.sounds[soundId];
+                            if (audio && this.backgroundMusic === audio) {
+                                gainNode.gain.value = this.currentVolume * 0.7;
+                            } else {
+                                gainNode.gain.value = this.currentVolume;
+                            }
                         }
                     }
-                });
-                
-                // CRITICAL: Update currently playing sound immediately
-                if (this.currentlyPlaying && typeof this.currentlyPlaying.volume !== 'undefined') {
-                    this.currentlyPlaying.volume = this.currentVolume;
-                }
-                
-                // CRITICAL: Update background music immediately
-                if (this.backgroundMusic && typeof this.backgroundMusic.volume !== 'undefined') {
-                    this.backgroundMusic.volume = this.currentVolume * 0.7;
+                } else {
+                    // Update all preloaded sounds (non-iOS)
+                    Object.values(this.sounds).forEach(audio => {
+                        if (audio && typeof audio.volume !== 'undefined') {
+                            if (this.backgroundMusic === audio) {
+                                audio.volume = this.currentVolume * 0.7;
+                            } else {
+                                audio.volume = this.currentVolume;
+                            }
+                        }
+                    });
+                    
+                    // CRITICAL: Update currently playing sound immediately
+                    if (this.currentlyPlaying && typeof this.currentlyPlaying.volume !== 'undefined') {
+                        this.currentlyPlaying.volume = this.currentVolume;
+                    }
+                    
+                    // CRITICAL: Update background music immediately
+                    if (this.backgroundMusic && typeof this.backgroundMusic.volume !== 'undefined') {
+                        this.backgroundMusic.volume = this.currentVolume * 0.7;
+                    }
                 }
             }
 
