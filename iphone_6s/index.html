@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.7.2 - iPhone</title>
+    <title>Mandalorian Soundboard v5.7.3 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.7.2</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.7.3</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -855,7 +855,7 @@
                     console.log('[VOLUME DEBUG] Test function available: window.testVolume(0.5)');
                     
                     // Simple event handler - directly update all audio elements
-                    const inputHandler = function() {
+                    const inputHandler = async function() {
                         const sliderValue = parseFloat(this.value);
                         const newVolume = sliderValue / 100; // Convert 0-100 to 0-1
                         console.log('[VOLUME DEBUG] INPUT EVENT FIRED! Value:', sliderValue, 'Volume:', newVolume);
@@ -867,11 +867,37 @@
                         if (self.isIOS && self.audioContext) {
                             // Resume audio context if suspended
                             if (self.audioContext.state === 'suspended') {
-                                self.audioContext.resume().then(() => {
+                                try {
+                                    await self.audioContext.resume();
                                     console.log('[VOLUME DEBUG] Audio context resumed');
-                                }).catch(e => {
+                                } catch (e) {
                                     console.error('[VOLUME DEBUG] Failed to resume audio context:', e);
-                                });
+                                }
+                            }
+                            
+                            // CRITICAL: Create MediaElementSource for all sounds on first slider touch
+                            // This avoids creating them during playback which causes crackling
+                            for (const soundId in self.sounds) {
+                                const audio = self.sounds[soundId];
+                                if (audio && !audio._mediaSourceCreated && audio.readyState >= 2) {
+                                    try {
+                                        // Ensure audio is paused
+                                        audio.pause();
+                                        audio.currentTime = 0;
+                                        
+                                        // Create MediaElementSource and GainNode
+                                        const source = self.audioContext.createMediaElementSource(audio);
+                                        const gainNode = self.audioContext.createGain();
+                                        gainNode.gain.value = newVolume;
+                                        source.connect(gainNode);
+                                        gainNode.connect(self.audioContext.destination);
+                                        self.gainNodes[soundId] = gainNode;
+                                        audio._mediaSourceCreated = true;
+                                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId} on slider touch, gain: ${gainNode.gain.value}`);
+                                    } catch (e) {
+                                        console.error(`[VOLUME DEBUG] Failed to create GainNode for ${soundId}:`, e);
+                                    }
+                                }
                             }
                             
                             // Update ALL GainNodes on iOS
@@ -1193,41 +1219,13 @@
                 // Reset audio to clean state
                 await this.resetAudioToCleanState(audio);
                 
-                // On iOS, create MediaElementSource on first play if needed
-                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
-                    try {
-                        // Ensure audio is in clean state
-                        audio.pause();
-                        audio.currentTime = 0;
-                        
-                        // Ensure audio context is running - wait for it if needed
-                        if (this.audioContext.state === 'suspended') {
-                            await this.audioContext.resume();
-                        }
-                        
-                        // Wait a bit more to ensure audio context is ready
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        
-                        // Create MediaElementSource and GainNode
-                        const source = this.audioContext.createMediaElementSource(audio);
-                        const gainNode = this.audioContext.createGain();
-                        gainNode.gain.value = this.currentVolume * 0.7;
-                        source.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        this.gainNodes[soundId] = gainNode;
-                        audio._mediaSourceCreated = true;
-                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
-                    } catch (e) {
-                        console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
-                        // If creation fails, try to play anyway (might work without GainNode)
-                    }
-                } else if (this.isIOS && this.gainNodes[soundId]) {
+                // On iOS, MediaElementSource should already be created when slider was touched
+                // Just update the GainNode volume if it exists
+                if (this.isIOS && this.gainNodes[soundId]) {
                     // Update existing GainNode
                     this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
-                }
-                
-                // Set volume for non-iOS
-                if (!this.isIOS) {
+                } else if (!this.isIOS) {
+                    // Set volume for non-iOS
                     audio.volume = this.currentVolume * 0.7;
                 }
                 
@@ -1286,41 +1284,13 @@
                 // Reset audio to clean state
                 await this.resetAudioToCleanState(audio);
                 
-                // On iOS, create MediaElementSource on first play if needed
-                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
-                    try {
-                        // Ensure audio is in clean state
-                        audio.pause();
-                        audio.currentTime = 0;
-                        
-                        // Ensure audio context is running - wait for it if needed
-                        if (this.audioContext.state === 'suspended') {
-                            await this.audioContext.resume();
-                        }
-                        
-                        // Wait a bit to ensure audio context is ready
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        
-                        // Create MediaElementSource and GainNode
-                        const source = this.audioContext.createMediaElementSource(audio);
-                        const gainNode = this.audioContext.createGain();
-                        gainNode.gain.value = this.currentVolume;
-                        source.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        this.gainNodes[soundId] = gainNode;
-                        audio._mediaSourceCreated = true;
-                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
-                    } catch (e) {
-                        console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
-                        // If creation fails, try to play anyway (might work without GainNode)
-                    }
-                } else if (this.isIOS && this.gainNodes[soundId]) {
+                // On iOS, MediaElementSource should already be created when slider was touched
+                // Just update the GainNode volume if it exists
+                if (this.isIOS && this.gainNodes[soundId]) {
                     // Update existing GainNode
                     this.gainNodes[soundId].gain.value = this.currentVolume;
-                }
-                
-                // Set volume for non-iOS
-                if (!this.isIOS) {
+                } else if (!this.isIOS) {
+                    // Set volume for non-iOS
                     audio.volume = this.currentVolume;
                 }
                 
