@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.8.0 - iPhone</title>
+    <title>Mandalorian Soundboard v5.8.1 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -539,7 +539,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.8.0</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.8.1</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -909,14 +909,40 @@
                 this.stopBackgroundMusic(false);
 
                 setTimeout(() => {
-                    audio.volume = this.currentVolume * 0.7;
-                    audio.currentTime = 0;
-                    audio.loop = true;
+                    // Remove any existing event listeners to avoid duplicates
+                    const newAudio = audio.cloneNode();
+                    newAudio.src = audio.src;
+                    newAudio.preload = 'auto';
+                    newAudio.volume = this.currentVolume * 0.7;
                     
-                    const playPromise = audio.play();
+                    // Store reference to the new audio element
+                    this.sounds[soundId] = newAudio;
+                    
+                    // Handle loop transition smoothly to avoid crackling at the end
+                    newAudio.addEventListener('timeupdate', () => {
+                        // If we're within 0.3 seconds of the end, restart smoothly
+                        if (newAudio.duration && newAudio.currentTime >= newAudio.duration - 0.3) {
+                            newAudio.currentTime = 0;
+                        }
+                    });
+                    
+                    // Also handle ended event as backup
+                    newAudio.addEventListener('ended', () => {
+                        if (this.backgroundMusic === newAudio) {
+                            newAudio.currentTime = 0;
+                            newAudio.play().catch(e => {
+                                console.error(`Loop restart failed: ${e.message}`);
+                            });
+                        }
+                    });
+                    
+                    newAudio.currentTime = 0;
+                    newAudio.loop = false; // We'll handle looping manually
+                    
+                    const playPromise = newAudio.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            this.backgroundMusic = audio;
+                            this.backgroundMusic = newAudio;
                             console.log(`Background music playing: ${soundId}`);
                         }).catch(error => {
                             console.error(`Background music failed: ${error.message}`);
