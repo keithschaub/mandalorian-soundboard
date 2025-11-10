@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.8 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.9 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.8</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.9</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1112,13 +1112,26 @@
                         this.backgroundMusic.currentTime = 0;
                         this.backgroundMusic.loop = false;
                         
-                        // Small delay to ensure audio is fully stopped
+                        // Force stop by removing loop and resetting multiple times
+                        if (this.backgroundMusic.loop) {
+                            this.backgroundMusic.loop = false;
+                        }
+                        
+                        // Multiple pauses to ensure audio is fully stopped
+                        setTimeout(() => {
+                            if (this.backgroundMusic) {
+                                this.backgroundMusic.pause();
+                                this.backgroundMusic.currentTime = 0;
+                                this.backgroundMusic.loop = false;
+                            }
+                        }, 10);
+                        
                         setTimeout(() => {
                             if (this.backgroundMusic) {
                                 this.backgroundMusic.pause();
                                 this.backgroundMusic.currentTime = 0;
                             }
-                        }, 10);
+                        }, 50);
                     } catch (error) {
                         console.error(`Error stopping background music: ${error.message}`);
                     }
@@ -1138,9 +1151,14 @@
 
             playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
                 // Stop any existing background music first
+                // Capture if we had previous music BEFORE stopping (stopBackgroundMusic sets it to null)
+                const hadPreviousMusic = this.backgroundMusic !== null;
                 this.stopBackgroundMusic(false);
                 
-                // Wait a bit for audio to fully stop
+                // Wait longer if we're switching from another background track
+                // This gives the previous audio time to fully stop before creating MediaElementSource
+                const delay = hadPreviousMusic ? 250 : 100;
+                
                 setTimeout(() => {
                     // Ensure audio is fully stopped and reset
                     audio.pause();
@@ -1148,53 +1166,75 @@
                     audio.loop = false;
                     
                     // On iOS, create MediaElementSource if needed
+                    // CRITICAL: Wait a bit more if we just stopped another track to avoid crackling
                     if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
-                        try {
-                            // Ensure audio context is running
-                            if (this.audioContext.state === 'suspended') {
-                                this.audioContext.resume();
+                        // If we just switched from another track, wait a bit more before creating MediaElementSource
+                        const createDelay = hadPreviousMusic ? 50 : 0;
+                        
+                        setTimeout(() => {
+                            try {
+                                // Ensure audio is paused
+                                audio.pause();
+                                audio.currentTime = 0;
+                                
+                                // Ensure audio context is running
+                                if (this.audioContext.state === 'suspended') {
+                                    this.audioContext.resume();
+                                }
+                                
+                                // Create MediaElementSource and GainNode
+                                const source = this.audioContext.createMediaElementSource(audio);
+                                const gainNode = this.audioContext.createGain();
+                                gainNode.gain.value = this.currentVolume * 0.7;
+                                source.connect(gainNode);
+                                gainNode.connect(this.audioContext.destination);
+                                this.gainNodes[soundId] = gainNode;
+                                audio._mediaSourceCreated = true;
+                                console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
+                                
+                                // Now play the audio
+                                this.startBackgroundMusicPlayback(audio, soundId, buttonElement);
+                            } catch (e) {
+                                console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
+                                // Fallback: try to play anyway
+                                this.startBackgroundMusicPlayback(audio, soundId, buttonElement);
                             }
-                            
-                            // Create MediaElementSource and GainNode
-                            const source = this.audioContext.createMediaElementSource(audio);
-                            const gainNode = this.audioContext.createGain();
-                            gainNode.gain.value = this.currentVolume * 0.7;
-                            source.connect(gainNode);
-                            gainNode.connect(this.audioContext.destination);
-                            this.gainNodes[soundId] = gainNode;
-                            audio._mediaSourceCreated = true;
-                            console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
-                        } catch (e) {
-                            console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
+                        }, createDelay);
+                    } else {
+                        // MediaElementSource already exists or not iOS
+                        if (this.isIOS && this.gainNodes[soundId]) {
+                            // Update existing GainNode
+                            this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
                         }
-                    } else if (this.isIOS && this.gainNodes[soundId]) {
-                        // Update existing GainNode
-                        this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
+                        
+                        // Set volume for non-iOS
+                        if (!this.isIOS) {
+                            audio.volume = this.currentVolume * 0.7;
+                        }
+                        
+                        // Play audio
+                        this.startBackgroundMusicPlayback(audio, soundId, buttonElement);
                     }
-                    
-                    // Set volume for non-iOS
-                    if (!this.isIOS) {
-                        audio.volume = this.currentVolume * 0.7;
-                    }
-                    
-                    // Play audio
-                    audio.currentTime = 0;
-                    audio.loop = true;
-                    
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            this.backgroundMusic = audio;
-                            console.log(`Background music playing: ${soundId}`);
-                        }).catch(error => {
-                            console.error(`Background music failed: ${error.message}`);
-                            this.backgroundMusic = null;
-                            this.toggledThemes[soundId] = false;
-                            buttonElement.classList.remove('toggled-on');
-                            this.showError(buttonElement);
-                        });
-                    }
-                }, 100);
+                }, delay);
+            }
+            
+            startBackgroundMusicPlayback(audio, soundId, buttonElement) {
+                audio.currentTime = 0;
+                audio.loop = true;
+                
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        this.backgroundMusic = audio;
+                        console.log(`Background music playing: ${soundId}`);
+                    }).catch(error => {
+                        console.error(`Background music failed: ${error.message}`);
+                        this.backgroundMusic = null;
+                        this.toggledThemes[soundId] = false;
+                        buttonElement.classList.remove('toggled-on');
+                        this.showError(buttonElement);
+                    });
+                }
             }
             
 
