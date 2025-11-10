@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.7.3 - iPhone</title>
+    <title>Mandalorian Soundboard v5.8.0 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -140,59 +140,6 @@
         .gray { border-color: #5A6C7D; }
         .orange { border-color: #FF6B35; }
 
-        .volume-control {
-            text-align: center;
-            margin: 10px auto 10px auto;
-            max-width: 400px;
-            padding: 10px 15px;
-            flex-shrink: 0;
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-            background: rgba(26, 26, 26, 0.98);
-            border-top: 1px solid rgba(74, 144, 226, 0.3);
-        }
-
-        .volume-label {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #4A90E2;
-        }
-
-        .volume-slider {
-            width: 100%;
-            height: 12px;
-            border-radius: 6px;
-            background: #2D2D2D;
-            outline: none;
-            -webkit-appearance: none;
-            appearance: none;
-            touch-action: pan-x;
-            -webkit-tap-highlight-color: transparent;
-            cursor: pointer;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #4A90E2;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            border: 2px solid #357ABD;
-        }
-
-        .volume-slider::-moz-range-thumb {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #4A90E2;
-            cursor: pointer;
-            border: 2px solid #357ABD;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
 
         /* Mobile optimizations */
         @media (max-width: 480px) {
@@ -225,9 +172,6 @@
                 margin: 3px auto 8px auto;
             }
             
-            .volume-control {
-                margin: 8px auto 15px auto;
-            }
         }
 
         /* Landscape mode */
@@ -266,26 +210,6 @@
                 margin: 3px auto 5px auto;
             }
             
-            .volume-control {
-                margin: 5px auto 5px auto;
-                padding: 8px 15px;
-                position: sticky;
-                bottom: 0;
-            }
-            
-            .volume-slider {
-                height: 14px;
-            }
-            
-            .volume-slider::-webkit-slider-thumb {
-                width: 36px;
-                height: 36px;
-            }
-            
-            .volume-slider::-moz-range-thumb {
-                width: 36px;
-                height: 36px;
-            }
         }
 
         /* Loading state */
@@ -615,7 +539,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.7.3</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.8.0</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -708,10 +632,6 @@
         </button>
     </div>
     
-        <div class="volume-control" id="volumeControl" style="display: block;">
-            <div class="volume-label">🔊 VOLUME</div>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
-        </div>
     </div>
 
     <script>
@@ -719,23 +639,19 @@
         class SoundBoard {
             constructor() {
                 this.sounds = {};
-                this.gainNodes = {}; // Store GainNodes for iOS volume control
                 this.currentVolume = 0.8;
                 this.audioEnabled = false;
-                this.audioContext = null;
                 this.currentlyPlaying = null;
                 this.backgroundMusic = null;
                 this.backgroundSounds = ['Mando Theme', 'Mando Flute'];
                 this.problematicSounds = ['Thank you', 'Yes'];
                 this.toggledThemes = {};
                 this.offlineMode = false;
-                this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 this.init();
             }
 
             init() {
                 this.setupOfflineDetection();
-                this.setupVolumeControl();
                 this.setupButtons();
                 this.checkServiceWorker();
                 // Auto-enable audio on initialization
@@ -777,12 +693,6 @@
                 try {
                     console.log('Starting audio enable process...');
                     
-                    // Create AudioContext for iOS volume control
-                    if (this.isIOS && !this.audioContext) {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        console.log('[VOLUME DEBUG] iOS detected, created AudioContext for volume control');
-                    }
-                    
                     // Create a simple test audio to unlock iOS audio
                     const testAudio = new Audio();
                     testAudio.volume = 0.1;
@@ -819,186 +729,6 @@
                 // This function is kept for compatibility but does nothing now
             }
 
-            setupVolumeControl() {
-                // Simple, direct implementation based on standard HTML5 audio volume control pattern
-                const self = this;
-                
-                const setupSlider = () => {
-                    const volumeSlider = document.getElementById('volumeSlider');
-                    if (!volumeSlider) {
-                        console.log('[VOLUME DEBUG] Slider not found, retrying...');
-                        setTimeout(setupSlider, 100);
-                        return;
-                    }
-                    
-                    console.log('[VOLUME DEBUG] Slider found! Setting up...');
-                    console.log('[VOLUME DEBUG] Current volume:', self.currentVolume);
-                    console.log('[VOLUME DEBUG] Sounds loaded:', Object.keys(self.sounds).length);
-                    console.log('[VOLUME DEBUG] Slider value:', volumeSlider.value);
-                    
-                    // Test function to directly set volume
-                    window.testVolume = function(vol) {
-                        console.log('[VOLUME TEST] Setting volume to:', vol);
-                        self.currentVolume = vol;
-                        for (const soundId in self.sounds) {
-                            const audio = self.sounds[soundId];
-                            if (audio) {
-                                audio.volume = vol;
-                                console.log('[VOLUME TEST] Set', soundId, 'to', audio.volume);
-                            }
-                        }
-                        if (self.currentlyPlaying) {
-                            self.currentlyPlaying.volume = vol;
-                            console.log('[VOLUME TEST] Set currently playing to', vol);
-                        }
-                    };
-                    console.log('[VOLUME DEBUG] Test function available: window.testVolume(0.5)');
-                    
-                    // Simple event handler - directly update all audio elements
-                    const inputHandler = async function() {
-                        const sliderValue = parseFloat(this.value);
-                        const newVolume = sliderValue / 100; // Convert 0-100 to 0-1
-                        console.log('[VOLUME DEBUG] INPUT EVENT FIRED! Value:', sliderValue, 'Volume:', newVolume);
-                        console.log('[VOLUME DEBUG] iOS:', self.isIOS);
-                        
-                        self.currentVolume = newVolume;
-                        
-                        // On iOS, use GainNode; otherwise use audio.volume
-                        if (self.isIOS && self.audioContext) {
-                            // Resume audio context if suspended
-                            if (self.audioContext.state === 'suspended') {
-                                try {
-                                    await self.audioContext.resume();
-                                    console.log('[VOLUME DEBUG] Audio context resumed');
-                                } catch (e) {
-                                    console.error('[VOLUME DEBUG] Failed to resume audio context:', e);
-                                }
-                            }
-                            
-                            // CRITICAL: Create MediaElementSource for all sounds on first slider touch
-                            // This avoids creating them during playback which causes crackling
-                            for (const soundId in self.sounds) {
-                                const audio = self.sounds[soundId];
-                                if (audio && !audio._mediaSourceCreated && audio.readyState >= 2) {
-                                    try {
-                                        // Ensure audio is paused
-                                        audio.pause();
-                                        audio.currentTime = 0;
-                                        
-                                        // Create MediaElementSource and GainNode
-                                        const source = self.audioContext.createMediaElementSource(audio);
-                                        const gainNode = self.audioContext.createGain();
-                                        gainNode.gain.value = newVolume;
-                                        source.connect(gainNode);
-                                        gainNode.connect(self.audioContext.destination);
-                                        self.gainNodes[soundId] = gainNode;
-                                        audio._mediaSourceCreated = true;
-                                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId} on slider touch, gain: ${gainNode.gain.value}`);
-                                    } catch (e) {
-                                        console.error(`[VOLUME DEBUG] Failed to create GainNode for ${soundId}:`, e);
-                                    }
-                                }
-                            }
-                            
-                            // Update ALL GainNodes on iOS
-                            let updatedCount = 0;
-                            for (const soundId in self.gainNodes) {
-                                const gainNode = self.gainNodes[soundId];
-                                if (gainNode) {
-                                    const audio = self.sounds[soundId];
-                                    if (audio && self.backgroundMusic === audio) {
-                                        gainNode.gain.value = newVolume * 0.7;
-                                        console.log(`[VOLUME DEBUG] Updated background music GainNode for ${soundId} to ${gainNode.gain.value}`);
-                                    } else {
-                                        gainNode.gain.value = newVolume;
-                                        console.log(`[VOLUME DEBUG] Updated GainNode for ${soundId} to ${gainNode.gain.value}`);
-                                    }
-                                    updatedCount++;
-                                }
-                            }
-                            
-                            // Also check currentlyPlaying and backgroundMusic by direct reference
-                            if (self.currentlyPlaying) {
-                                for (const soundId in self.sounds) {
-                                    if (self.sounds[soundId] === self.currentlyPlaying && self.gainNodes[soundId]) {
-                                        self.gainNodes[soundId].gain.value = newVolume;
-                                        console.log(`[VOLUME DEBUG] Updated currently playing GainNode for ${soundId} to ${newVolume}`);
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (self.backgroundMusic) {
-                                for (const soundId in self.sounds) {
-                                    if (self.sounds[soundId] === self.backgroundMusic && self.gainNodes[soundId]) {
-                                        self.gainNodes[soundId].gain.value = newVolume * 0.7;
-                                        console.log(`[VOLUME DEBUG] Updated background music GainNode for ${soundId} to ${newVolume * 0.7}`);
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            console.log(`[VOLUME DEBUG] Updated ${updatedCount} GainNodes total`);
-                        } else {
-                            // Update ALL audio elements directly (non-iOS)
-                            let updatedCount = 0;
-                            for (const soundId in self.sounds) {
-                                const audio = self.sounds[soundId];
-                                if (audio && audio.volume !== undefined) {
-                                    if (self.backgroundMusic === audio) {
-                                        audio.volume = newVolume * 0.7;
-                                        console.log('[VOLUME DEBUG] Updated background music:', soundId, 'to', audio.volume);
-                                    } else {
-                                        audio.volume = newVolume;
-                                        updatedCount++;
-                                    }
-                                }
-                            }
-                            console.log('[VOLUME DEBUG] Updated', updatedCount, 'preloaded sounds');
-                            
-                            // Update currently playing
-                            if (self.currentlyPlaying) {
-                                const oldVol = self.currentlyPlaying.volume;
-                                self.currentlyPlaying.volume = newVolume;
-                                console.log('[VOLUME DEBUG] Updated currently playing from', oldVol, 'to', self.currentlyPlaying.volume);
-                            } else {
-                                console.log('[VOLUME DEBUG] No currently playing sound');
-                            }
-                            
-                            // Update background music
-                            if (self.backgroundMusic) {
-                                const oldVol = self.backgroundMusic.volume;
-                                self.backgroundMusic.volume = newVolume * 0.7;
-                                console.log('[VOLUME DEBUG] Updated background music from', oldVol, 'to', self.backgroundMusic.volume);
-                            } else {
-                                console.log('[VOLUME DEBUG] No background music');
-                            }
-                        }
-                    };
-                    
-                    volumeSlider.addEventListener('input', inputHandler);
-                    console.log('[VOLUME DEBUG] Added input event listener');
-                    
-                    // Also handle change event
-                    volumeSlider.addEventListener('change', function() {
-                        console.log('[VOLUME DEBUG] CHANGE EVENT FIRED!');
-                        inputHandler.call(this);
-                    });
-                    console.log('[VOLUME DEBUG] Added change event listener');
-                    
-                    // Test if slider is working
-                    volumeSlider.addEventListener('mousedown', function() {
-                        console.log('[VOLUME DEBUG] Mouse down on slider');
-                    });
-                    volumeSlider.addEventListener('touchstart', function() {
-                        console.log('[VOLUME DEBUG] Touch start on slider');
-                    });
-                    
-                    console.log('[VOLUME DEBUG] Volume slider setup complete');
-                };
-                
-                setupSlider();
-            }
 
             setupButtons() {
                 const buttons = document.querySelectorAll('.sound-btn');
@@ -1044,27 +774,13 @@
                     // Use relative path for offline support
                     const audio = new Audio(`Sounds/${soundId}.mp3`);
                     audio.preload = 'auto';
-                    
-                    // On iOS, set volume to 1.0 (we'll control via GainNode)
-                    // On non-iOS, set volume normally
-                    if (this.isIOS) {
-                        audio.volume = 1.0;
-                    } else {
-                        audio.volume = this.currentVolume;
-                    }
-                    
+                    audio.volume = this.currentVolume;
                     this.sounds[soundId] = audio;
                     
                     if (this.problematicSounds.includes(soundId)) {
                         const duplicateAudio = new Audio(`Sounds/${soundId}.mp3`);
                         duplicateAudio.preload = 'auto';
-                        
-                        if (this.isIOS) {
-                            duplicateAudio.volume = 1.0;
-                        } else {
-                            duplicateAudio.volume = this.currentVolume;
-                        }
-                        
+                        duplicateAudio.volume = this.currentVolume;
                         this.sounds[soundId + '_duplicate'] = duplicateAudio;
                     }
                     
@@ -1144,26 +860,6 @@
                 }
             }
 
-            resetAudioToCleanState(audio) {
-                // Reset audio to a known good state
-                try {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    audio.loop = false;
-                    // Small delay to ensure state is reset
-                    return new Promise((resolve) => {
-                        setTimeout(() => {
-                            audio.pause();
-                            audio.currentTime = 0;
-                            resolve();
-                        }, 50);
-                    });
-                } catch (error) {
-                    console.error(`Error resetting audio state: ${error.message}`);
-                    return Promise.resolve();
-                }
-            }
-            
             stopBackgroundMusic(clearAllToggles = false) {
                 if (this.backgroundMusic) {
                     try {
@@ -1209,55 +905,28 @@
                 }
             }
 
-            async playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
-                // Stop any existing background music first
+            playBackgroundMusicWithLoop(soundId, audio, buttonElement) {
                 this.stopBackgroundMusic(false);
-                
-                // Wait longer to ensure previous audio is fully stopped
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                // Reset audio to clean state
-                await this.resetAudioToCleanState(audio);
-                
-                // On iOS, MediaElementSource should already be created when slider was touched
-                // Just update the GainNode volume if it exists
-                if (this.isIOS && this.gainNodes[soundId]) {
-                    // Update existing GainNode
-                    this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
-                } else if (!this.isIOS) {
-                    // Set volume for non-iOS
+
+                setTimeout(() => {
                     audio.volume = this.currentVolume * 0.7;
-                }
-                
-                // Ensure audio is in clean state before playing
-                audio.pause();
-                audio.currentTime = 0;
-                audio.loop = false;
-                
-                // Small delay before playing
-                await new Promise(resolve => setTimeout(resolve, 50));
-                
-                // Play audio
-                this.startBackgroundMusicPlayback(audio, soundId, buttonElement);
-            }
-            
-            startBackgroundMusicPlayback(audio, soundId, buttonElement) {
-                audio.currentTime = 0;
-                audio.loop = true;
-                
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        this.backgroundMusic = audio;
-                        console.log(`Background music playing: ${soundId}`);
-                    }).catch(error => {
-                        console.error(`Background music failed: ${error.message}`);
-                        this.backgroundMusic = null;
-                        this.toggledThemes[soundId] = false;
-                        buttonElement.classList.remove('toggled-on');
-                        this.showError(buttonElement);
-                    });
-                }
+                    audio.currentTime = 0;
+                    audio.loop = true;
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.backgroundMusic = audio;
+                            console.log(`Background music playing: ${soundId}`);
+                        }).catch(error => {
+                            console.error(`Background music failed: ${error.message}`);
+                            this.backgroundMusic = null;
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
+                            this.showError(buttonElement);
+                        });
+                    }
+                }, 100);
             }
             
 
@@ -1280,28 +949,10 @@
                 }, delay);
             }
 
-            async attemptPlayRegularSound(soundId, audio, buttonElement, isProblematic) {
-                // Reset audio to clean state
-                await this.resetAudioToCleanState(audio);
-                
-                // On iOS, MediaElementSource should already be created when slider was touched
-                // Just update the GainNode volume if it exists
-                if (this.isIOS && this.gainNodes[soundId]) {
-                    // Update existing GainNode
-                    this.gainNodes[soundId].gain.value = this.currentVolume;
-                } else if (!this.isIOS) {
-                    // Set volume for non-iOS
-                    audio.volume = this.currentVolume;
-                }
-                
-                // Ensure audio is in clean state before playing
-                audio.pause();
+            attemptPlayRegularSound(soundId, audio, buttonElement, isProblematic) {
+                audio.volume = this.currentVolume;
                 audio.currentTime = 0;
                 
-                // Small delay before playing
-                await new Promise(resolve => setTimeout(resolve, 50));
-                
-                // Play audio
                 const playPromise = audio.play();
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
@@ -1327,44 +978,6 @@
                 }
             }
 
-            updateAllVolumes() {
-                // On iOS, update GainNodes; otherwise update audio.volume
-                if (this.isIOS && this.audioContext) {
-                    // Update all GainNodes
-                    for (const soundId in this.gainNodes) {
-                        const gainNode = this.gainNodes[soundId];
-                        if (gainNode) {
-                            const audio = this.sounds[soundId];
-                            if (audio && this.backgroundMusic === audio) {
-                                gainNode.gain.value = this.currentVolume * 0.7;
-                            } else {
-                                gainNode.gain.value = this.currentVolume;
-                            }
-                        }
-                    }
-                } else {
-                    // Update all preloaded sounds (non-iOS)
-                    Object.values(this.sounds).forEach(audio => {
-                        if (audio && typeof audio.volume !== 'undefined') {
-                            if (this.backgroundMusic === audio) {
-                                audio.volume = this.currentVolume * 0.7;
-                            } else {
-                                audio.volume = this.currentVolume;
-                            }
-                        }
-                    });
-                    
-                    // CRITICAL: Update currently playing sound immediately
-                    if (this.currentlyPlaying && typeof this.currentlyPlaying.volume !== 'undefined') {
-                        this.currentlyPlaying.volume = this.currentVolume;
-                    }
-                    
-                    // CRITICAL: Update background music immediately
-                    if (this.backgroundMusic && typeof this.backgroundMusic.volume !== 'undefined') {
-                        this.backgroundMusic.volume = this.currentVolume * 0.7;
-                    }
-                }
-            }
 
             showError(buttonElement) {
                 buttonElement.classList.add('error');
