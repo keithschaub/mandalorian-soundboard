@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.7 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.8 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.7</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.8</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1147,80 +1147,54 @@
                     audio.currentTime = 0;
                     audio.loop = false;
                     
-                    // On iOS, ensure MediaElementSource is created before playing
-                    if (this.isIOS && this.audioContext) {
-                        if (!audio._mediaSourceCreated) {
-                            // Create MediaElementSource synchronously if audio is ready
-                            if (audio.readyState >= 2) {
-                                // Audio is ready, create MediaElementSource now
-                                this.createMediaElementSourceForAudioSync(soundId, audio, this.currentVolume * 0.7);
-                                this.startBackgroundMusic(audio, soundId, buttonElement);
-                            } else {
-                                // Wait for audio to be ready, then create and play
-                                audio.addEventListener('canplay', () => {
-                                    this.createMediaElementSourceForAudioSync(soundId, audio, this.currentVolume * 0.7);
-                                    this.startBackgroundMusic(audio, soundId, buttonElement);
-                                }, { once: true });
+                    // On iOS, create MediaElementSource if needed
+                    if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
+                        try {
+                            // Ensure audio context is running
+                            if (this.audioContext.state === 'suspended') {
+                                this.audioContext.resume();
                             }
-                        } else {
-                            // MediaElementSource already created, just update volume and play
-                            if (this.gainNodes[soundId]) {
-                                this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
-                            }
-                            this.startBackgroundMusic(audio, soundId, buttonElement);
+                            
+                            // Create MediaElementSource and GainNode
+                            const source = this.audioContext.createMediaElementSource(audio);
+                            const gainNode = this.audioContext.createGain();
+                            gainNode.gain.value = this.currentVolume * 0.7;
+                            source.connect(gainNode);
+                            gainNode.connect(this.audioContext.destination);
+                            this.gainNodes[soundId] = gainNode;
+                            audio._mediaSourceCreated = true;
+                            console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
+                        } catch (e) {
+                            console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
                         }
-                    } else {
-                        // Non-iOS, just set volume and play
+                    } else if (this.isIOS && this.gainNodes[soundId]) {
+                        // Update existing GainNode
+                        this.gainNodes[soundId].gain.value = this.currentVolume * 0.7;
+                    }
+                    
+                    // Set volume for non-iOS
+                    if (!this.isIOS) {
                         audio.volume = this.currentVolume * 0.7;
-                        this.startBackgroundMusic(audio, soundId, buttonElement);
                     }
-                }, 150);
-            }
-            
-            startBackgroundMusic(audio, soundId, buttonElement) {
-                audio.currentTime = 0;
-                audio.loop = true;
-                
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        this.backgroundMusic = audio;
-                        console.log(`Background music playing: ${soundId}`);
-                    }).catch(error => {
-                        console.error(`Background music failed: ${error.message}`);
-                        this.backgroundMusic = null;
-                        this.toggledThemes[soundId] = false;
-                        buttonElement.classList.remove('toggled-on');
-                        this.showError(buttonElement);
-                    });
-                }
-            }
-            
-            createMediaElementSourceForAudioSync(soundId, audio, volume) {
-                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
-                    try {
-                        // Ensure audio is paused
-                        audio.pause();
-                        audio.currentTime = 0;
-                        
-                        // Ensure audio context is running
-                        if (this.audioContext.state === 'suspended') {
-                            this.audioContext.resume();
-                        }
-                        
-                        // Create MediaElementSource and GainNode synchronously
-                        const source = this.audioContext.createMediaElementSource(audio);
-                        const gainNode = this.audioContext.createGain();
-                        gainNode.gain.value = volume;
-                        source.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        this.gainNodes[soundId] = gainNode;
-                        audio._mediaSourceCreated = true;
-                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
-                    } catch (e) {
-                        console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
+                    
+                    // Play audio
+                    audio.currentTime = 0;
+                    audio.loop = true;
+                    
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.backgroundMusic = audio;
+                            console.log(`Background music playing: ${soundId}`);
+                        }).catch(error => {
+                            console.error(`Background music failed: ${error.message}`);
+                            this.backgroundMusic = null;
+                            this.toggledThemes[soundId] = false;
+                            buttonElement.classList.remove('toggled-on');
+                            this.showError(buttonElement);
+                        });
                     }
-                }
+                }, 100);
             }
             
 
@@ -1248,32 +1222,37 @@
                 audio.pause();
                 audio.currentTime = 0;
                 
-                // On iOS, ensure MediaElementSource is created before playing
-                if (this.isIOS && this.audioContext) {
-                    if (!audio._mediaSourceCreated) {
-                        // Create MediaElementSource synchronously if audio is ready
-                        if (audio.readyState >= 2) {
-                            this.createMediaElementSourceForAudioSync(soundId, audio, this.currentVolume);
-                        } else {
-                            // Wait for audio to be ready
-                            audio.addEventListener('canplay', () => {
-                                this.createMediaElementSourceForAudioSync(soundId, audio, this.currentVolume);
-                                this.playRegularSoundNow(audio, soundId, buttonElement);
-                            }, { once: true });
-                            return; // Don't play yet, wait for canplay
+                // On iOS, create MediaElementSource if needed
+                if (this.isIOS && this.audioContext && !audio._mediaSourceCreated) {
+                    try {
+                        // Ensure audio context is running
+                        if (this.audioContext.state === 'suspended') {
+                            this.audioContext.resume();
                         }
-                    } else if (this.gainNodes[soundId]) {
-                        // Update existing GainNode
-                        this.gainNodes[soundId].gain.value = this.currentVolume;
+                        
+                        // Create MediaElementSource and GainNode
+                        const source = this.audioContext.createMediaElementSource(audio);
+                        const gainNode = this.audioContext.createGain();
+                        gainNode.gain.value = this.currentVolume;
+                        source.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        this.gainNodes[soundId] = gainNode;
+                        audio._mediaSourceCreated = true;
+                        console.log(`[VOLUME DEBUG] Created GainNode for ${soundId}, gain: ${gainNode.gain.value}`);
+                    } catch (e) {
+                        console.error(`[VOLUME DEBUG] Failed to create MediaElementSource for ${soundId}:`, e);
                     }
-                } else {
+                } else if (this.isIOS && this.gainNodes[soundId]) {
+                    // Update existing GainNode
+                    this.gainNodes[soundId].gain.value = this.currentVolume;
+                }
+                
+                // Set volume for non-iOS
+                if (!this.isIOS) {
                     audio.volume = this.currentVolume;
                 }
                 
-                this.playRegularSoundNow(audio, soundId, buttonElement);
-            }
-            
-            playRegularSoundNow(audio, soundId, buttonElement) {
+                // Play audio
                 audio.currentTime = 0;
                 
                 const playPromise = audio.play();
