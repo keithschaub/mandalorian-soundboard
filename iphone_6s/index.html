@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.2 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.3 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.2</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.3</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -812,79 +812,75 @@
             }
 
             setupVolumeControl() {
-                // Wait for DOM to be ready
-                const self = this; // Capture 'this' context
-                const initVolumeControl = () => {
+                // Simple, direct implementation based on standard HTML5 audio volume control pattern
+                const self = this;
+                
+                const setupSlider = () => {
                     const volumeSlider = document.getElementById('volumeSlider');
                     if (!volumeSlider) {
-                        console.error('Volume slider not found, retrying...');
-                        setTimeout(initVolumeControl, 100);
+                        setTimeout(setupSlider, 100);
                         return;
                     }
                     
-                    console.log('Volume slider found, setting up...');
-                    console.log('Current volume:', self.currentVolume);
-                    console.log('Sounds loaded:', Object.keys(self.sounds).length);
-                    
-                    // Direct volume update function - MUST use 'self' to access instance
-                    const updateVolume = function(e) {
-                        const sliderValue = this.value || volumeSlider.value;
-                        const newVolume = parseFloat(sliderValue) / 100;
-                        self.currentVolume = Math.max(0, Math.min(1, newVolume));
+                    // Simple event handler - directly update all audio elements
+                    volumeSlider.addEventListener('input', function() {
+                        const sliderValue = parseFloat(this.value);
+                        const newVolume = sliderValue / 100; // Convert 0-100 to 0-1
+                        self.currentVolume = newVolume;
                         
-                        console.log(`VOLUME SLIDER MOVED: ${sliderValue}% = ${self.currentVolume}`);
-                        
-                        // Update ALL audio elements immediately
-                        let updatedCount = 0;
-                        Object.values(self.sounds).forEach(audio => {
-                            if (audio && typeof audio.volume !== 'undefined') {
+                        // Update ALL audio elements directly
+                        for (const soundId in self.sounds) {
+                            const audio = self.sounds[soundId];
+                            if (audio && audio.volume !== undefined) {
                                 if (self.backgroundMusic === audio) {
-                                    audio.volume = self.currentVolume * 0.7;
-                                    console.log(`Updated background music volume to: ${audio.volume}`);
+                                    audio.volume = newVolume * 0.7;
                                 } else {
-                                    audio.volume = self.currentVolume;
-                                    updatedCount++;
+                                    audio.volume = newVolume;
                                 }
                             }
-                        });
-                        console.log(`Updated ${updatedCount} preloaded sounds`);
-                        
-                        // Force update currently playing
-                        if (self.currentlyPlaying && typeof self.currentlyPlaying.volume !== 'undefined') {
-                            self.currentlyPlaying.volume = self.currentVolume;
-                            console.log(`Updated currently playing volume to: ${self.currentlyPlaying.volume}`);
-                        } else {
-                            console.log('No currently playing sound');
                         }
                         
-                        // Force update background music
-                        if (self.backgroundMusic && typeof self.backgroundMusic.volume !== 'undefined') {
-                            self.backgroundMusic.volume = self.currentVolume * 0.7;
-                            console.log(`Updated background music volume to: ${self.backgroundMusic.volume}`);
-                        } else {
-                            console.log('No background music playing');
+                        // Update currently playing
+                        if (self.currentlyPlaying) {
+                            self.currentlyPlaying.volume = newVolume;
                         }
-                    };
+                        
+                        // Update background music
+                        if (self.backgroundMusic) {
+                            self.backgroundMusic.volume = newVolume * 0.7;
+                        }
+                    });
                     
-                    // Bind updateVolume to the slider element so 'this' refers to the slider
-                    const boundUpdateVolume = updateVolume.bind(volumeSlider);
+                    // Also handle change event
+                    volumeSlider.addEventListener('change', function() {
+                        const sliderValue = parseFloat(this.value);
+                        const newVolume = sliderValue / 100;
+                        self.currentVolume = newVolume;
+                        
+                        for (const soundId in self.sounds) {
+                            const audio = self.sounds[soundId];
+                            if (audio && audio.volume !== undefined) {
+                                if (self.backgroundMusic === audio) {
+                                    audio.volume = newVolume * 0.7;
+                                } else {
+                                    audio.volume = newVolume;
+                                }
+                            }
+                        }
+                        
+                        if (self.currentlyPlaying) {
+                            self.currentlyPlaying.volume = newVolume;
+                        }
+                        
+                        if (self.backgroundMusic) {
+                            self.backgroundMusic.volume = newVolume * 0.7;
+                        }
+                    });
                     
-                    // Add event listeners with bound function
-                    volumeSlider.addEventListener('input', boundUpdateVolume, false);
-                    volumeSlider.addEventListener('change', boundUpdateVolume, false);
-                    volumeSlider.addEventListener('touchmove', boundUpdateVolume, false);
-                    volumeSlider.addEventListener('touchend', boundUpdateVolume, false);
-                    
-                    // Also set oninput directly as backup
-                    volumeSlider.oninput = boundUpdateVolume;
-                    volumeSlider.onchange = boundUpdateVolume;
-                    
-                    // Test that it's working
-                    console.log('Volume control setup complete. Slider value:', volumeSlider.value);
+                    console.log('Volume slider setup complete');
                 };
                 
-                // Try immediately, then retry if needed
-                initVolumeControl();
+                setupSlider();
             }
 
             setupButtons() {
