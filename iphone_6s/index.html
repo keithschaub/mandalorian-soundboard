@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.6.1 - iPhone</title>
+    <title>Mandalorian Soundboard v5.6.2 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -615,7 +615,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.6.1</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.6.2</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -813,6 +813,7 @@
 
             setupVolumeControl() {
                 // Wait for DOM to be ready
+                const self = this; // Capture 'this' context
                 const initVolumeControl = () => {
                     const volumeSlider = document.getElementById('volumeSlider');
                     if (!volumeSlider) {
@@ -822,55 +823,64 @@
                     }
                     
                     console.log('Volume slider found, setting up...');
+                    console.log('Current volume:', self.currentVolume);
+                    console.log('Sounds loaded:', Object.keys(self.sounds).length);
                     
-                    // Direct volume update function - update immediately
-                    const updateVolume = (e) => {
-                        const sliderValue = volumeSlider.value;
+                    // Direct volume update function - MUST use 'self' to access instance
+                    const updateVolume = function(e) {
+                        const sliderValue = this.value || volumeSlider.value;
                         const newVolume = parseFloat(sliderValue) / 100;
-                        this.currentVolume = Math.max(0, Math.min(1, newVolume));
+                        self.currentVolume = Math.max(0, Math.min(1, newVolume));
                         
-                        console.log(`Volume changed: ${sliderValue}% = ${this.currentVolume}`);
+                        console.log(`VOLUME SLIDER MOVED: ${sliderValue}% = ${self.currentVolume}`);
                         
                         // Update ALL audio elements immediately
-                        Object.values(this.sounds).forEach(audio => {
-                            if (audio && audio.volume !== undefined) {
-                                if (this.backgroundMusic === audio) {
-                                    audio.volume = this.currentVolume * 0.7;
+                        let updatedCount = 0;
+                        Object.values(self.sounds).forEach(audio => {
+                            if (audio && typeof audio.volume !== 'undefined') {
+                                if (self.backgroundMusic === audio) {
+                                    audio.volume = self.currentVolume * 0.7;
+                                    console.log(`Updated background music volume to: ${audio.volume}`);
                                 } else {
-                                    audio.volume = this.currentVolume;
+                                    audio.volume = self.currentVolume;
+                                    updatedCount++;
                                 }
                             }
                         });
+                        console.log(`Updated ${updatedCount} preloaded sounds`);
                         
                         // Force update currently playing
-                        if (this.currentlyPlaying) {
-                            this.currentlyPlaying.volume = this.currentVolume;
-                            console.log(`Updated currently playing: ${this.currentlyPlaying.volume}`);
+                        if (self.currentlyPlaying && typeof self.currentlyPlaying.volume !== 'undefined') {
+                            self.currentlyPlaying.volume = self.currentVolume;
+                            console.log(`Updated currently playing volume to: ${self.currentlyPlaying.volume}`);
+                        } else {
+                            console.log('No currently playing sound');
                         }
                         
                         // Force update background music
-                        if (this.backgroundMusic) {
-                            this.backgroundMusic.volume = this.currentVolume * 0.7;
-                            console.log(`Updated background music: ${this.backgroundMusic.volume}`);
+                        if (self.backgroundMusic && typeof self.backgroundMusic.volume !== 'undefined') {
+                            self.backgroundMusic.volume = self.currentVolume * 0.7;
+                            console.log(`Updated background music volume to: ${self.backgroundMusic.volume}`);
+                        } else {
+                            console.log('No background music playing');
                         }
                     };
                     
-                    // Remove any existing listeners first
-                    const newSlider = volumeSlider.cloneNode(true);
-                    volumeSlider.parentNode.replaceChild(newSlider, volumeSlider);
-                    const slider = document.getElementById('volumeSlider');
+                    // Bind updateVolume to the slider element so 'this' refers to the slider
+                    const boundUpdateVolume = updateVolume.bind(volumeSlider);
                     
-                    // Add event listeners
-                    slider.addEventListener('input', updateVolume, false);
-                    slider.addEventListener('change', updateVolume, false);
-                    slider.addEventListener('touchmove', updateVolume, false);
-                    slider.addEventListener('touchend', updateVolume, false);
+                    // Add event listeners with bound function
+                    volumeSlider.addEventListener('input', boundUpdateVolume, false);
+                    volumeSlider.addEventListener('change', boundUpdateVolume, false);
+                    volumeSlider.addEventListener('touchmove', boundUpdateVolume, false);
+                    volumeSlider.addEventListener('touchend', boundUpdateVolume, false);
                     
                     // Also set oninput directly as backup
-                    slider.oninput = updateVolume;
-                    slider.onchange = updateVolume;
+                    volumeSlider.oninput = boundUpdateVolume;
+                    volumeSlider.onchange = boundUpdateVolume;
                     
-                    console.log('Volume control setup complete');
+                    // Test that it's working
+                    console.log('Volume control setup complete. Slider value:', volumeSlider.value);
                 };
                 
                 // Try immediately, then retry if needed
