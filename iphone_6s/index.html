@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.8.3 - iPhone</title>
+    <title>Mandalorian Soundboard v5.8.4 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -539,7 +539,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.8.3</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.8.4</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -925,7 +925,7 @@
                     
                     const setupLoopHandler = () => {
                         if (newAudio.duration && !restartTime) {
-                            restartTime = newAudio.duration - 2.5; // Restart 2.5 seconds before end
+                            restartTime = newAudio.duration - 3.0; // Restart 3 seconds before end to avoid last 2 seconds
                             
                             loopHandler = () => {
                                 // If we're past the restart point, jump back to start
