@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.8.6 - iPhone</title>
+    <title>Mandalorian Soundboard v5.8.7 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -542,7 +542,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.8.6</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.8.7</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1131,6 +1131,8 @@
                 if (availableNames.length > 0) {
                     shouldAddLabel = true;
                     labelName = availableNames[Math.floor(Math.random() * availableNames.length)];
+                    // Mark this name as active immediately to prevent duplicates
+                    activeNames.add(labelName);
                 }
             }
             
@@ -1149,9 +1151,7 @@
 
                     // Add text label for green blips occasionally
                     if (shouldAddLabel && labelName) {
-                        // Mark this name as active
-                        activeNames.add(labelName);
-                        
+                        // Name is already marked as active (done earlier to prevent duplicates)
                         const label = document.createElement('div');
                         label.className = 'blip-label';
                         label.textContent = labelName;
