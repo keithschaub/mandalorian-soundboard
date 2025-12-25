@@ -1,5 +1,8 @@
 // Enhanced Service Worker for offline functionality - iPhone 6s version
-const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.8.7';
+const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.9.0';
+
+// ESP32 Jetpack Controller IP - these requests should NEVER be cached
+const JETPACK_IP = '192.168.4.1';
 // Get the base path where the service worker is located
 const BASE_PATH = self.location.pathname.replace('/sw.js', '');
 const urlsToCache = [
@@ -71,7 +74,23 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
+  // IMPORTANT: Always bypass cache for ESP32 Jetpack requests
+  // These are real-time API calls that should never be cached
+  if (event.request.url.includes(JETPACK_IP)) {
+    console.log('Service Worker: Bypassing cache for Jetpack API', event.request.url);
+    event.respondWith(
+      fetch(event.request).catch((error) => {
+        console.error('Service Worker: Jetpack request failed', error);
+        return new Response(JSON.stringify({ error: 'Jetpack not reachable' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+
+  // Skip other cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }

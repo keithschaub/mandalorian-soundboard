@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.8.7 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.0 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -50,11 +50,11 @@
             gap: 8px;
             max-width: 100%;
             margin: 0 auto 10px auto;
-            padding: 0 10px 20px 10px; /* Add bottom padding to prevent cutoff */
+            padding: 0 10px 10px 10px;
             overflow-y: auto;
             flex: 1 1 auto;
             min-height: 0;
-            max-height: calc(100vh - 200px); /* Reduced to allow more space */
+            max-height: calc(100vh - 280px); /* Reduced to make room for jetpack section */
         }
 
         .sound-btn {
@@ -140,6 +140,134 @@
         .gray { border-color: #5A6C7D; }
         .orange { border-color: #FF6B35; }
 
+        /* Jetpack Control Section */
+        .jetpack-section {
+            background: linear-gradient(180deg, rgba(255, 50, 50, 0.1) 0%, rgba(255, 100, 50, 0.05) 100%);
+            border-top: 2px solid rgba(255, 100, 50, 0.3);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .jetpack-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #FF4500;
+            background: linear-gradient(145deg, #2D2D2D, #1A1A1A);
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.3);
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .jetpack-btn:active {
+            transform: scale(0.95);
+        }
+
+        .jetpack-btn .btn-icon {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+
+        .jetpack-btn .btn-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .jetpack-btn .countdown {
+            font-size: 32px;
+            font-weight: 900;
+            color: #FFF;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.8);
+        }
+
+        .jetpack-btn.connecting {
+            border-color: #FFD700;
+            animation: jetpack-pulse 0.5s ease-in-out infinite;
+        }
+
+        .jetpack-btn.active {
+            border-color: #FF6B35;
+            background: linear-gradient(145deg, #FF6B35, #FF4500);
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.8), inset 0 0 20px rgba(255, 200, 100, 0.3);
+            animation: jetpack-glow 0.5s ease-in-out infinite alternate;
+        }
+
+        .jetpack-btn.error {
+            border-color: #FF0000;
+            background: linear-gradient(145deg, #8B0000, #5C0000);
+            animation: jetpack-error 0.2s ease-in-out 3;
+        }
+
+        .jetpack-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            border-color: #555;
+        }
+
+        @keyframes jetpack-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+        }
+
+        @keyframes jetpack-glow {
+            from { box-shadow: 0 0 20px rgba(255, 107, 53, 0.6), inset 0 0 15px rgba(255, 200, 100, 0.2); }
+            to { box-shadow: 0 0 40px rgba(255, 107, 53, 1), inset 0 0 25px rgba(255, 200, 100, 0.4); }
+        }
+
+        @keyframes jetpack-error {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .jetpack-status {
+            flex: 1;
+            max-width: 180px;
+        }
+
+        .jetpack-status-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .jetpack-status-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FF6B35;
+        }
+
+        .jetpack-status-text.connected {
+            color: #4ade80;
+        }
+
+        .jetpack-status-text.error {
+            color: #FF4757;
+        }
+
+        .jetpack-wifi-hint {
+            font-size: 9px;
+            color: #666;
+            margin-top: 3px;
+        }
+
 
         /* Mobile optimizations */
         @media (max-width: 480px) {
@@ -150,8 +278,21 @@
             .sound-grid {
                 grid-template-columns: repeat(4, 1fr);
                 gap: 6px;
-                padding: 0 10px 30px 10px; /* Extra bottom padding on mobile */
-                max-height: calc(100vh - 180px); /* More space on mobile */
+                padding: 0 10px 10px 10px;
+                max-height: calc(100vh - 260px); /* Room for jetpack section */
+            }
+            
+            .jetpack-btn {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .jetpack-btn .btn-icon {
+                font-size: 20px;
+            }
+            
+            .jetpack-btn .countdown {
+                font-size: 28px;
             }
             
             .sound-btn {
@@ -189,8 +330,30 @@
             .sound-grid {
                 grid-template-columns: repeat(10, 1fr);
                 gap: 4px;
-                padding: 0 10px 20px 10px; /* Add bottom padding */
-                max-height: calc(100vh - 150px); /* More space in landscape */
+                padding: 0 10px 10px 10px;
+                max-height: calc(100vh - 200px); /* Room for jetpack */
+            }
+            
+            .jetpack-section {
+                padding: 5px 15px;
+            }
+            
+            .jetpack-btn {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .jetpack-btn .btn-icon {
+                font-size: 16px;
+                margin-bottom: 0;
+            }
+            
+            .jetpack-btn .btn-label {
+                display: none;
+            }
+            
+            .jetpack-btn .countdown {
+                font-size: 22px;
             }
             
             .sound-btn {
@@ -542,12 +705,13 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.8.7</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.0</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
         <div class="legend-item">🟢 GROGU</div>
         <div class="legend-item">🟠 THEMES</div>
+        <div class="legend-item">🔴 JETPACK</div>
     </div>
     
     <div class="sound-grid" id="soundGrid" style="display: grid;">
@@ -632,6 +796,19 @@
         
         <button class="sound-btn green" data-sound="Grogu bad baby">
             <div class="btn-text">BAD<br>BABY</div>
+        </button>
+    </div>
+    
+    <!-- Jetpack Control Section -->
+    <div class="jetpack-section" id="jetpackSection">
+        <div class="jetpack-status">
+            <div class="jetpack-status-label">JETPACK STATUS</div>
+            <div class="jetpack-status-text" id="jetpackStatusText">Not Connected</div>
+            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi</div>
+        </div>
+        <button class="jetpack-btn disabled" id="jetpackBtn">
+            <span class="btn-icon">🚀</span>
+            <span class="btn-label">FOG</span>
         </button>
     </div>
     
@@ -1043,9 +1220,212 @@
             }
         }
 
+        // Jetpack Controller - Communicates with ESP32 via WiFi
+        class JetpackController {
+            constructor() {
+                this.baseUrl = 'http://192.168.4.1'; // ESP32 AP default IP
+                this.isConnected = false;
+                this.isActive = false;
+                this.countdownInterval = null;
+                this.statusCheckInterval = null;
+                this.button = null;
+                this.statusText = null;
+                this.hint = null;
+                this.dispenseDuration = 5; // seconds
+                this.init();
+            }
+
+            init() {
+                this.button = document.getElementById('jetpackBtn');
+                this.statusText = document.getElementById('jetpackStatusText');
+                this.hint = document.getElementById('jetpackHint');
+                
+                if (this.button) {
+                    this.button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.activateJetpack();
+                    });
+                    
+                    this.button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.activateJetpack();
+                    });
+                }
+                
+                // Start checking for ESP32 connection
+                this.startStatusCheck();
+            }
+
+            startStatusCheck() {
+                // Check immediately
+                this.checkConnection();
+                
+                // Then check every 3 seconds
+                this.statusCheckInterval = setInterval(() => {
+                    if (!this.isActive) {
+                        this.checkConnection();
+                    }
+                }, 3000);
+            }
+
+            async checkConnection() {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    
+                    const response = await fetch(`${this.baseUrl}/status`, {
+                        method: 'GET',
+                        signal: controller.signal,
+                        cache: 'no-store'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.setConnected(true);
+                        
+                        // Update state based on ESP32 response
+                        if (data.state === 'active') {
+                            this.isActive = true;
+                            const remaining = Math.ceil(data.remaining / 1000);
+                            this.showCountdown(remaining);
+                        } else if (this.isActive && data.state === 'idle') {
+                            // Just became idle
+                            this.resetButton();
+                        }
+                    } else {
+                        this.setConnected(false);
+                    }
+                } catch (error) {
+                    this.setConnected(false);
+                }
+            }
+
+            setConnected(connected) {
+                this.isConnected = connected;
+                
+                if (connected) {
+                    this.button.classList.remove('disabled');
+                    this.statusText.textContent = 'Ready';
+                    this.statusText.classList.add('connected');
+                    this.statusText.classList.remove('error');
+                    this.hint.textContent = 'Tap to activate fog effect';
+                } else {
+                    if (!this.isActive) {
+                        this.button.classList.add('disabled');
+                    }
+                    this.statusText.textContent = 'Not Connected';
+                    this.statusText.classList.remove('connected');
+                    this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
+                }
+            }
+
+            async activateJetpack() {
+                if (!this.isConnected || this.isActive) return;
+                
+                // Visual feedback - connecting
+                this.button.classList.add('connecting');
+                this.button.classList.remove('disabled');
+                this.statusText.textContent = 'Activating...';
+                
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    
+                    const response = await fetch(`${this.baseUrl}/activate`, {
+                        method: 'GET',
+                        signal: controller.signal,
+                        cache: 'no-store'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    // ESP32 redirects, so we just check if request succeeded
+                    this.isActive = true;
+                    this.button.classList.remove('connecting');
+                    this.button.classList.add('active');
+                    this.statusText.textContent = 'FOG ACTIVE!';
+                    this.hint.textContent = '';
+                    
+                    // Start countdown
+                    this.startCountdown(this.dispenseDuration);
+                    
+                } catch (error) {
+                    console.error('Jetpack activation failed:', error);
+                    this.showError('Activation Failed');
+                }
+            }
+
+            startCountdown(seconds) {
+                let remaining = seconds;
+                this.showCountdown(remaining);
+                
+                this.countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        this.resetButton();
+                    } else {
+                        this.showCountdown(remaining);
+                    }
+                }, 1000);
+            }
+
+            showCountdown(seconds) {
+                this.button.innerHTML = `<span class="countdown">${seconds}</span>`;
+            }
+
+            resetButton() {
+                this.isActive = false;
+                clearInterval(this.countdownInterval);
+                this.countdownInterval = null;
+                
+                this.button.classList.remove('active', 'connecting', 'error');
+                this.button.innerHTML = `
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-label">FOG</span>
+                `;
+                
+                if (this.isConnected) {
+                    this.statusText.textContent = 'Ready';
+                    this.hint.textContent = 'Tap to activate fog effect';
+                } else {
+                    this.button.classList.add('disabled');
+                    this.statusText.textContent = 'Not Connected';
+                    this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
+                }
+            }
+
+            showError(message) {
+                this.button.classList.remove('connecting', 'active');
+                this.button.classList.add('error');
+                this.statusText.textContent = message;
+                this.statusText.classList.add('error');
+                this.hint.textContent = 'Check WiFi connection';
+                
+                setTimeout(() => {
+                    this.resetButton();
+                    this.statusText.classList.remove('error');
+                }, 2000);
+            }
+
+            async emergencyStop() {
+                try {
+                    await fetch(`${this.baseUrl}/stop`, {
+                        method: 'GET',
+                        cache: 'no-store'
+                    });
+                } catch (error) {
+                    console.error('Emergency stop failed:', error);
+                }
+                this.resetButton();
+            }
+        }
+
         // Initialize the soundboard when page loads
         document.addEventListener('DOMContentLoaded', () => {
             window.soundBoard = new SoundBoard();
+            window.jetpackController = new JetpackController();
         });
 
         // Prevent zoom on double tap (iOS)
