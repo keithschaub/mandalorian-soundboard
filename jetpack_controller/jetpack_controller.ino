@@ -299,6 +299,7 @@ void setup() {
     
     // Setup HTTP endpoints
     server.on("/", HTTP_GET, handleRoot);
+    server.on("/popup", HTTP_GET, handlePopup);  // Minimal popup for PWA
     server.on("/activate", HTTP_GET, handleActivate);
     server.on("/status", HTTP_GET, handleStatus);
     server.on("/stop", HTTP_GET, handleStop);
@@ -350,6 +351,166 @@ void loop() {
 void handleRoot() {
     Serial.println("[HTTP] GET / from " + server.client().remoteIP().toString());
     server.send(200, "text/html", HTML_PAGE);
+}
+
+// Minimal popup page for PWA integration
+void handlePopup() {
+    Serial.println("[HTTP] GET /popup from " + server.client().remoteIP().toString());
+    
+    String html = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Jetpack</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff6b35;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+        }
+        .status {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #4ade80;
+        }
+        .status.active {
+            color: #ff6b35;
+            animation: pulse 0.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .countdown {
+            font-size: 80px;
+            color: #ff6b35;
+            text-shadow: 0 0 30px rgba(255, 107, 53, 0.8);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: linear-gradient(145deg, #ff6b35, #e55a2b);
+            border: none;
+            border-radius: 20px;
+            width: 200px;
+            height: 80px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+        .btn:disabled {
+            background: linear-gradient(145deg, #666, #444);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn.stop {
+            background: linear-gradient(145deg, #dc2626, #b91c1c);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.5);
+            margin-top: 15px;
+            height: 50px;
+            font-size: 16px;
+        }
+        .close-hint {
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 JETPACK FOG</h1>
+    <div id="status" class="status">READY</div>
+    <div id="countdown" class="countdown" style="display:none;">5</div>
+    <button id="activateBtn" class="btn" onclick="activate()">ACTIVATE</button>
+    <button class="btn stop" onclick="stop()">STOP</button>
+    <div class="close-hint">Close this tab to return to soundboard</div>
+    
+    <script>
+        let polling = null;
+        
+        function activate() {
+            document.getElementById('activateBtn').disabled = true;
+            document.getElementById('status').textContent = 'ACTIVATING...';
+            
+            fetch('/activate')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'activating' || data.status === 'already_active') {
+                        startPolling();
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('status').textContent = 'ERROR';
+                    document.getElementById('activateBtn').disabled = false;
+                });
+        }
+        
+        function stop() {
+            fetch('/stop').then(() => checkStatus());
+        }
+        
+        function startPolling() {
+            polling = setInterval(checkStatus, 500);
+            checkStatus();
+        }
+        
+        function checkStatus() {
+            fetch('/status')
+                .then(r => r.json())
+                .then(data => {
+                    const statusEl = document.getElementById('status');
+                    const countdownEl = document.getElementById('countdown');
+                    const btn = document.getElementById('activateBtn');
+                    
+                    if (data.state === 'active') {
+                        statusEl.textContent = 'FOG ACTIVE!';
+                        statusEl.className = 'status active';
+                        countdownEl.style.display = 'block';
+                        countdownEl.textContent = data.remaining;
+                        btn.disabled = true;
+                    } else {
+                        statusEl.textContent = 'READY';
+                        statusEl.className = 'status';
+                        countdownEl.style.display = 'none';
+                        btn.disabled = false;
+                        if (polling) {
+                            clearInterval(polling);
+                            polling = null;
+                        }
+                    }
+                });
+        }
+        
+        // Initial status check
+        checkStatus();
+    </script>
+</body>
+</html>
+)rawliteral";
+    
+    server.send(200, "text/html", html);
 }
 
 void handleActivate() {

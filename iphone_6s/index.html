@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.3 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.4 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.3</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.4</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -804,7 +804,7 @@
         <div class="jetpack-status">
             <div class="jetpack-status-label">JETPACK</div>
             <div class="jetpack-status-text connected" id="jetpackStatusText">Ready</div>
-            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi</div>
+            <div class="jetpack-wifi-hint" id="jetpackHint">Opens fog control popup</div>
         </div>
         <button class="jetpack-btn" id="jetpackBtn">
             <span class="btn-icon">🚀</span>
@@ -1220,18 +1220,14 @@
             }
         }
 
-        // Jetpack Controller - Uses hidden iframe to bypass mixed content
-        // Safari blocks fetch() and img from HTTPS→HTTP, but iframes can load HTTP pages
+        // Jetpack Controller - Opens popup page on ESP32
+        // Music keeps playing because we open a new tab, not navigate away
         class JetpackController {
             constructor() {
                 this.esp32Url = 'http://192.168.4.1';
-                this.isActive = false;
-                this.countdownInterval = null;
-                this.dispenseDuration = 5;
                 this.button = null;
                 this.statusText = null;
                 this.hint = null;
-                this.iframe = null;
                 this.init();
             }
 
@@ -1240,109 +1236,42 @@
                 this.statusText = document.getElementById('jetpackStatusText');
                 this.hint = document.getElementById('jetpackHint');
                 
-                // Create hidden iframe for requests
-                this.iframe = document.createElement('iframe');
-                this.iframe.style.display = 'none';
-                this.iframe.name = 'jetpack-frame';
-                this.iframe.id = 'jetpack-frame';
-                document.body.appendChild(this.iframe);
-                
                 // Ready state
                 this.statusText.textContent = 'Ready';
                 this.statusText.classList.add('connected');
-                this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
+                this.hint.textContent = 'Opens fog control popup';
                 this.button.classList.remove('disabled');
                 
                 if (this.button) {
-                    const activate = (e) => {
+                    const openPopup = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (!this.isActive) {
-                            this.activateJetpack();
-                        }
+                        this.openJetpackPopup();
                     };
                     
-                    this.button.addEventListener('click', activate);
-                    this.button.addEventListener('touchend', activate);
+                    this.button.addEventListener('click', openPopup);
+                    this.button.addEventListener('touchend', openPopup);
                 }
             }
 
-            activateJetpack() {
-                if (this.isActive) return;
+            openJetpackPopup() {
+                console.log('[Jetpack] Opening popup...');
                 
-                console.log('[Jetpack] Activating via iframe navigation...');
+                // Visual feedback
+                this.button.classList.add('connecting');
+                this.statusText.textContent = 'Opening...';
                 
-                // Method 1: Direct iframe src (simplest)
-                try {
-                    this.iframe.src = `${this.esp32Url}/activate?t=${Date.now()}`;
-                    console.log('[Jetpack] iframe.src set');
-                } catch (e) {
-                    console.log('[Jetpack] iframe.src failed:', e);
-                }
+                // Open the minimal popup page in a new tab
+                // On iOS Safari, this opens as a new tab (not true popup)
+                // But the original tab with music keeps playing!
+                window.open(`${this.esp32Url}/popup`, '_blank');
                 
-                // Method 2: Also try window.open as backup (will be blocked but might work)
-                try {
-                    const popup = window.open(`${this.esp32Url}/activate?t=${Date.now()}`, 'jetpack-frame');
-                    if (popup) {
-                        setTimeout(() => popup.close(), 500);
-                    }
-                } catch (e) {
-                    console.log('[Jetpack] window.open failed:', e);
-                }
-                
-                // Method 3: Also try img as another backup
-                try {
-                    const img = new Image();
-                    img.src = `${this.esp32Url}/activate?t=${Date.now()}&img=1`;
-                } catch (e) {
-                    console.log('[Jetpack] img failed:', e);
-                }
-                
-                // Start visual countdown
-                this.isActive = true;
-                this.button.classList.add('active');
-                this.statusText.textContent = 'FOG ACTIVE!';
-                this.hint.textContent = '';
-                
-                this.startCountdown(this.dispenseDuration);
-            }
-
-            startCountdown(seconds) {
-                let remaining = seconds;
-                this.showCountdown(remaining);
-                
-                this.countdownInterval = setInterval(() => {
-                    remaining--;
-                    if (remaining <= 0) {
-                        this.resetButton();
-                    } else {
-                        this.showCountdown(remaining);
-                    }
+                // Reset button after short delay
+                setTimeout(() => {
+                    this.button.classList.remove('connecting');
+                    this.statusText.textContent = 'Ready';
+                    this.hint.textContent = 'Opens fog control popup';
                 }, 1000);
-            }
-
-            showCountdown(seconds) {
-                this.button.innerHTML = `<span class="countdown">${seconds}</span>`;
-            }
-
-            resetButton() {
-                this.isActive = false;
-                clearInterval(this.countdownInterval);
-                this.countdownInterval = null;
-                
-                this.button.classList.remove('active', 'connecting');
-                this.button.innerHTML = `
-                    <span class="btn-icon">🚀</span>
-                    <span class="btn-label">FOG</span>
-                `;
-                
-                this.statusText.textContent = 'Ready';
-                this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
-                
-                // Clear iframe
-                try {
-                    this.iframe.src = 'about:blank';
-                } catch (e) {}
             }
         }
 
