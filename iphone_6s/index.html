@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.2 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.3 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.2</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.3</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1220,8 +1220,8 @@
             }
         }
 
-        // Jetpack Controller - Uses image request trick to bypass mixed content
-        // Safari blocks fetch() from HTTPS→HTTP, but img src requests work!
+        // Jetpack Controller - Uses hidden iframe to bypass mixed content
+        // Safari blocks fetch() and img from HTTPS→HTTP, but iframes can load HTTP pages
         class JetpackController {
             constructor() {
                 this.esp32Url = 'http://192.168.4.1';
@@ -1231,6 +1231,7 @@
                 this.button = null;
                 this.statusText = null;
                 this.hint = null;
+                this.iframe = null;
                 this.init();
             }
 
@@ -1238,6 +1239,13 @@
                 this.button = document.getElementById('jetpackBtn');
                 this.statusText = document.getElementById('jetpackStatusText');
                 this.hint = document.getElementById('jetpackHint');
+                
+                // Create hidden iframe for requests
+                this.iframe = document.createElement('iframe');
+                this.iframe.style.display = 'none';
+                this.iframe.name = 'jetpack-frame';
+                this.iframe.id = 'jetpack-frame';
+                document.body.appendChild(this.iframe);
                 
                 // Ready state
                 this.statusText.textContent = 'Ready';
@@ -1262,20 +1270,35 @@
             activateJetpack() {
                 if (this.isActive) return;
                 
-                console.log('[Jetpack] Activating via image request...');
+                console.log('[Jetpack] Activating via iframe navigation...');
                 
-                // Use image request trick to bypass mixed content
-                // The browser will make a GET request to load the "image"
-                // It won't actually be an image, but the request triggers the ESP32
-                const img = new Image();
-                img.onload = () => console.log('[Jetpack] Request sent (unexpected load)');
-                img.onerror = () => console.log('[Jetpack] Request sent (expected - not an image)');
+                // Method 1: Direct iframe src (simplest)
+                try {
+                    this.iframe.src = `${this.esp32Url}/activate?t=${Date.now()}`;
+                    console.log('[Jetpack] iframe.src set');
+                } catch (e) {
+                    console.log('[Jetpack] iframe.src failed:', e);
+                }
                 
-                // Add timestamp to prevent caching
-                img.src = `${this.esp32Url}/activate?t=${Date.now()}`;
+                // Method 2: Also try window.open as backup (will be blocked but might work)
+                try {
+                    const popup = window.open(`${this.esp32Url}/activate?t=${Date.now()}`, 'jetpack-frame');
+                    if (popup) {
+                        setTimeout(() => popup.close(), 500);
+                    }
+                } catch (e) {
+                    console.log('[Jetpack] window.open failed:', e);
+                }
                 
-                // Start visual countdown regardless of response
-                // (we can't reliably detect if ESP32 received it due to mixed content)
+                // Method 3: Also try img as another backup
+                try {
+                    const img = new Image();
+                    img.src = `${this.esp32Url}/activate?t=${Date.now()}&img=1`;
+                } catch (e) {
+                    console.log('[Jetpack] img failed:', e);
+                }
+                
+                // Start visual countdown
                 this.isActive = true;
                 this.button.classList.add('active');
                 this.statusText.textContent = 'FOG ACTIVE!';
@@ -1315,6 +1338,11 @@
                 
                 this.statusText.textContent = 'Ready';
                 this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
+                
+                // Clear iframe
+                try {
+                    this.iframe.src = 'about:blank';
+                } catch (e) {}
             }
         }
 

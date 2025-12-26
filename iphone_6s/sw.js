@@ -1,5 +1,5 @@
 // Enhanced Service Worker for offline functionality - iPhone 6s version
-const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.9.2';
+const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.9.3';
 
 // ESP32 Jetpack Controller IP - these requests should NEVER be cached
 const JETPACK_IP = '192.168.4.1';
