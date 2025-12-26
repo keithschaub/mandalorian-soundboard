@@ -35,8 +35,8 @@ const char* AP_PASSWORD = "thisIsTheWay";  // Min 8 characters
 
 // Servo settings
 const int SERVO_PIN = 13;           // GPIO 13
-const int SERVO_OFF_POSITION = 10;  // Degrees - no water flow
-const int SERVO_ON_POSITION = 90;   // Degrees - water dispensing
+const int SERVO_ON_POSITION = 25;  // Degrees - water flow
+const int SERVO_OFF_POSITION = 120;   // Degrees - no water dispensing
 const int DISPENSE_DURATION = 5000; // Milliseconds (5 seconds)
 
 // LED settings (built-in LED for visual feedback)
@@ -280,9 +280,12 @@ void setup() {
     dispenserServo.setPeriodHertz(50);
     dispenserServo.attach(SERVO_PIN, 500, 2400);
     dispenserServo.write(SERVO_OFF_POSITION);
+    delay(500);  // Wait for servo to reach position
+    dispenserServo.detach();  // Detach to prevent hunting noise at idle
     Serial.println("[SERVO] Initialized on GPIO " + String(SERVO_PIN));
     Serial.println("[SERVO] OFF position: " + String(SERVO_OFF_POSITION) + " degrees");
     Serial.println("[SERVO] ON position: " + String(SERVO_ON_POSITION) + " degrees");
+    Serial.println("[SERVO] Detached for silent idle");
     Serial.println();
     
     // Initialize WiFi Access Point
@@ -440,12 +443,11 @@ void handlePopup() {
     </style>
 </head>
 <body>
-    <h1>🚀 JETPACK FOG</h1>
+    <h1>🚀 JETPACK</h1>
     <div id="status" class="status">READY</div>
     <div id="countdown" class="countdown" style="display:none;">5</div>
     <button id="activateBtn" class="btn" onclick="activate()">ACTIVATE</button>
-    <button class="btn stop" onclick="stop()">STOP</button>
-    <div class="close-hint">Close this tab to return to soundboard</div>
+    <button class="btn stop" onclick="goBack()">DONE</button>
     
     <script>
         let polling = null;
@@ -467,8 +469,11 @@ void handlePopup() {
                 });
         }
         
-        function stop() {
-            fetch('/stop').then(() => checkStatus());
+        function goBack() {
+            // Close this tab/window and return to soundboard
+            window.close();
+            // Fallback if window.close() doesn't work (some browsers block it)
+            history.back();
         }
         
         function startPolling() {
@@ -576,6 +581,12 @@ void startDispensing() {
     dispenseStartTime = millis();
     remainingSeconds = DISPENSE_DURATION / 1000;
     
+    // Re-attach servo if it was detached (to prevent hunting noise)
+    if (!dispenserServo.attached()) {
+        dispenserServo.attach(SERVO_PIN, 500, 2400);
+        Serial.println("[SERVO] Re-attached for movement");
+    }
+    
     // Move servo to ON position
     dispenserServo.write(SERVO_ON_POSITION);
     digitalWrite(LED_PIN, HIGH);
@@ -589,9 +600,17 @@ void stopDispensing() {
     isDispensing = false;
     remainingSeconds = 0;
     
-    // Move servo to OFF position
+    // Re-attach if needed, then move servo to OFF position
+    if (!dispenserServo.attached()) {
+        dispenserServo.attach(SERVO_PIN, 500, 2400);
+    }
     dispenserServo.write(SERVO_OFF_POSITION);
     digitalWrite(LED_PIN, LOW);
+    
+    // Wait for servo to reach position, then detach to stop hunting/noise
+    delay(500);
+    dispenserServo.detach();
+    Serial.println("[SERVO] Detached for silent idle");
     
     Serial.println("[SERVO] Dispense cycle complete");
     Serial.println();

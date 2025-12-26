@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.4 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.5 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.4</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.5</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -804,7 +804,7 @@
         <div class="jetpack-status">
             <div class="jetpack-status-label">JETPACK</div>
             <div class="jetpack-status-text connected" id="jetpackStatusText">Ready</div>
-            <div class="jetpack-wifi-hint" id="jetpackHint">Opens fog control popup</div>
+            <div class="jetpack-wifi-hint" id="jetpackHint"></div>
         </div>
         <button class="jetpack-btn" id="jetpackBtn">
             <span class="btn-icon">🚀</span>
@@ -1239,7 +1239,7 @@
                 // Ready state
                 this.statusText.textContent = 'Ready';
                 this.statusText.classList.add('connected');
-                this.hint.textContent = 'Opens fog control popup';
+                this.hint.textContent = '';
                 this.button.classList.remove('disabled');
                 
                 if (this.button) {
@@ -1270,7 +1270,7 @@
                 setTimeout(() => {
                     this.button.classList.remove('connecting');
                     this.statusText.textContent = 'Ready';
-                    this.hint.textContent = 'Opens fog control popup';
+                    this.hint.textContent = '';
                 }, 1000);
             }
         }
