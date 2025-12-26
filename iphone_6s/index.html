@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.1 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.2 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.1</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.2</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -802,9 +802,9 @@
     <!-- Jetpack Control Section -->
     <div class="jetpack-section" id="jetpackSection">
         <div class="jetpack-status">
-            <div class="jetpack-status-label">JETPACK CONTROL</div>
-            <div class="jetpack-status-text connected" id="jetpackStatusText">Tap to Open</div>
-            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi first</div>
+            <div class="jetpack-status-label">JETPACK</div>
+            <div class="jetpack-status-text connected" id="jetpackStatusText">Ready</div>
+            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi</div>
         </div>
         <button class="jetpack-btn" id="jetpackBtn">
             <span class="btn-icon">🚀</span>
@@ -1220,45 +1220,101 @@
             }
         }
 
-        // Jetpack Controller - Opens ESP32 control page directly
-        // (Safari blocks mixed content HTTP requests from HTTPS pages)
+        // Jetpack Controller - Uses image request trick to bypass mixed content
+        // Safari blocks fetch() from HTTPS→HTTP, but img src requests work!
         class JetpackController {
             constructor() {
                 this.esp32Url = 'http://192.168.4.1';
+                this.isActive = false;
+                this.countdownInterval = null;
+                this.dispenseDuration = 5;
+                this.button = null;
+                this.statusText = null;
+                this.hint = null;
                 this.init();
             }
 
             init() {
-                const button = document.getElementById('jetpackBtn');
-                const statusText = document.getElementById('jetpackStatusText');
-                const hint = document.getElementById('jetpackHint');
+                this.button = document.getElementById('jetpackBtn');
+                this.statusText = document.getElementById('jetpackStatusText');
+                this.hint = document.getElementById('jetpackHint');
                 
-                // Update UI to reflect link-based approach
-                statusText.textContent = 'Tap to Open';
-                statusText.classList.add('connected');
-                hint.textContent = 'Opens ESP32 control page';
-                button.classList.remove('disabled');
+                // Ready state
+                this.statusText.textContent = 'Ready';
+                this.statusText.classList.add('connected');
+                this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
+                this.button.classList.remove('disabled');
                 
-                if (button) {
-                    // Handle both click and touch
-                    const openController = (e) => {
+                if (this.button) {
+                    const activate = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        
-                        // Visual feedback
-                        button.classList.add('connecting');
-                        statusText.textContent = 'Opening...';
-                        
-                        // Open ESP32 page - works even with mixed content
-                        // because we're navigating, not fetching
-                        setTimeout(() => {
-                            window.location.href = this.esp32Url;
-                        }, 200);
+                        if (!this.isActive) {
+                            this.activateJetpack();
+                        }
                     };
                     
-                    button.addEventListener('click', openController);
-                    button.addEventListener('touchend', openController);
+                    this.button.addEventListener('click', activate);
+                    this.button.addEventListener('touchend', activate);
                 }
+            }
+
+            activateJetpack() {
+                if (this.isActive) return;
+                
+                console.log('[Jetpack] Activating via image request...');
+                
+                // Use image request trick to bypass mixed content
+                // The browser will make a GET request to load the "image"
+                // It won't actually be an image, but the request triggers the ESP32
+                const img = new Image();
+                img.onload = () => console.log('[Jetpack] Request sent (unexpected load)');
+                img.onerror = () => console.log('[Jetpack] Request sent (expected - not an image)');
+                
+                // Add timestamp to prevent caching
+                img.src = `${this.esp32Url}/activate?t=${Date.now()}`;
+                
+                // Start visual countdown regardless of response
+                // (we can't reliably detect if ESP32 received it due to mixed content)
+                this.isActive = true;
+                this.button.classList.add('active');
+                this.statusText.textContent = 'FOG ACTIVE!';
+                this.hint.textContent = '';
+                
+                this.startCountdown(this.dispenseDuration);
+            }
+
+            startCountdown(seconds) {
+                let remaining = seconds;
+                this.showCountdown(remaining);
+                
+                this.countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        this.resetButton();
+                    } else {
+                        this.showCountdown(remaining);
+                    }
+                }, 1000);
+            }
+
+            showCountdown(seconds) {
+                this.button.innerHTML = `<span class="countdown">${seconds}</span>`;
+            }
+
+            resetButton() {
+                this.isActive = false;
+                clearInterval(this.countdownInterval);
+                this.countdownInterval = null;
+                
+                this.button.classList.remove('active', 'connecting');
+                this.button.innerHTML = `
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-label">FOG</span>
+                `;
+                
+                this.statusText.textContent = 'Ready';
+                this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
             }
         }
 
