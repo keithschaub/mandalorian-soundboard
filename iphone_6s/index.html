@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.0 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.1 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.0</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.1</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -802,11 +802,11 @@
     <!-- Jetpack Control Section -->
     <div class="jetpack-section" id="jetpackSection">
         <div class="jetpack-status">
-            <div class="jetpack-status-label">JETPACK STATUS</div>
-            <div class="jetpack-status-text" id="jetpackStatusText">Not Connected</div>
-            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi</div>
+            <div class="jetpack-status-label">JETPACK CONTROL</div>
+            <div class="jetpack-status-text connected" id="jetpackStatusText">Tap to Open</div>
+            <div class="jetpack-wifi-hint" id="jetpackHint">Connect to MandalorianJetpack WiFi first</div>
         </div>
-        <button class="jetpack-btn disabled" id="jetpackBtn">
+        <button class="jetpack-btn" id="jetpackBtn">
             <span class="btn-icon">🚀</span>
             <span class="btn-label">FOG</span>
         </button>
@@ -1220,205 +1220,45 @@
             }
         }
 
-        // Jetpack Controller - Communicates with ESP32 via WiFi
+        // Jetpack Controller - Opens ESP32 control page directly
+        // (Safari blocks mixed content HTTP requests from HTTPS pages)
         class JetpackController {
             constructor() {
-                this.baseUrl = 'http://192.168.4.1'; // ESP32 AP default IP
-                this.isConnected = false;
-                this.isActive = false;
-                this.countdownInterval = null;
-                this.statusCheckInterval = null;
-                this.button = null;
-                this.statusText = null;
-                this.hint = null;
-                this.dispenseDuration = 5; // seconds
+                this.esp32Url = 'http://192.168.4.1';
                 this.init();
             }
 
             init() {
-                this.button = document.getElementById('jetpackBtn');
-                this.statusText = document.getElementById('jetpackStatusText');
-                this.hint = document.getElementById('jetpackHint');
+                const button = document.getElementById('jetpackBtn');
+                const statusText = document.getElementById('jetpackStatusText');
+                const hint = document.getElementById('jetpackHint');
                 
-                if (this.button) {
-                    this.button.addEventListener('click', (e) => {
+                // Update UI to reflect link-based approach
+                statusText.textContent = 'Tap to Open';
+                statusText.classList.add('connected');
+                hint.textContent = 'Opens ESP32 control page';
+                button.classList.remove('disabled');
+                
+                if (button) {
+                    // Handle both click and touch
+                    const openController = (e) => {
                         e.preventDefault();
-                        this.activateJetpack();
-                    });
-                    
-                    this.button.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        this.activateJetpack();
-                    });
-                }
-                
-                // Start checking for ESP32 connection
-                this.startStatusCheck();
-            }
-
-            startStatusCheck() {
-                // Check immediately
-                this.checkConnection();
-                
-                // Then check every 3 seconds
-                this.statusCheckInterval = setInterval(() => {
-                    if (!this.isActive) {
-                        this.checkConnection();
-                    }
-                }, 3000);
-            }
-
-            async checkConnection() {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 2000);
-                    
-                    const response = await fetch(`${this.baseUrl}/status`, {
-                        method: 'GET',
-                        signal: controller.signal,
-                        cache: 'no-store'
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.setConnected(true);
+                        e.stopPropagation();
                         
-                        // Update state based on ESP32 response
-                        if (data.state === 'active') {
-                            this.isActive = true;
-                            const remaining = Math.ceil(data.remaining / 1000);
-                            this.showCountdown(remaining);
-                        } else if (this.isActive && data.state === 'idle') {
-                            // Just became idle
-                            this.resetButton();
-                        }
-                    } else {
-                        this.setConnected(false);
-                    }
-                } catch (error) {
-                    this.setConnected(false);
-                }
-            }
-
-            setConnected(connected) {
-                this.isConnected = connected;
-                
-                if (connected) {
-                    this.button.classList.remove('disabled');
-                    this.statusText.textContent = 'Ready';
-                    this.statusText.classList.add('connected');
-                    this.statusText.classList.remove('error');
-                    this.hint.textContent = 'Tap to activate fog effect';
-                } else {
-                    if (!this.isActive) {
-                        this.button.classList.add('disabled');
-                    }
-                    this.statusText.textContent = 'Not Connected';
-                    this.statusText.classList.remove('connected');
-                    this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
-                }
-            }
-
-            async activateJetpack() {
-                if (!this.isConnected || this.isActive) return;
-                
-                // Visual feedback - connecting
-                this.button.classList.add('connecting');
-                this.button.classList.remove('disabled');
-                this.statusText.textContent = 'Activating...';
-                
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                        // Visual feedback
+                        button.classList.add('connecting');
+                        statusText.textContent = 'Opening...';
+                        
+                        // Open ESP32 page - works even with mixed content
+                        // because we're navigating, not fetching
+                        setTimeout(() => {
+                            window.location.href = this.esp32Url;
+                        }, 200);
+                    };
                     
-                    const response = await fetch(`${this.baseUrl}/activate`, {
-                        method: 'GET',
-                        signal: controller.signal,
-                        cache: 'no-store'
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    // ESP32 redirects, so we just check if request succeeded
-                    this.isActive = true;
-                    this.button.classList.remove('connecting');
-                    this.button.classList.add('active');
-                    this.statusText.textContent = 'FOG ACTIVE!';
-                    this.hint.textContent = '';
-                    
-                    // Start countdown
-                    this.startCountdown(this.dispenseDuration);
-                    
-                } catch (error) {
-                    console.error('Jetpack activation failed:', error);
-                    this.showError('Activation Failed');
+                    button.addEventListener('click', openController);
+                    button.addEventListener('touchend', openController);
                 }
-            }
-
-            startCountdown(seconds) {
-                let remaining = seconds;
-                this.showCountdown(remaining);
-                
-                this.countdownInterval = setInterval(() => {
-                    remaining--;
-                    if (remaining <= 0) {
-                        this.resetButton();
-                    } else {
-                        this.showCountdown(remaining);
-                    }
-                }, 1000);
-            }
-
-            showCountdown(seconds) {
-                this.button.innerHTML = `<span class="countdown">${seconds}</span>`;
-            }
-
-            resetButton() {
-                this.isActive = false;
-                clearInterval(this.countdownInterval);
-                this.countdownInterval = null;
-                
-                this.button.classList.remove('active', 'connecting', 'error');
-                this.button.innerHTML = `
-                    <span class="btn-icon">🚀</span>
-                    <span class="btn-label">FOG</span>
-                `;
-                
-                if (this.isConnected) {
-                    this.statusText.textContent = 'Ready';
-                    this.hint.textContent = 'Tap to activate fog effect';
-                } else {
-                    this.button.classList.add('disabled');
-                    this.statusText.textContent = 'Not Connected';
-                    this.hint.textContent = 'Connect to MandalorianJetpack WiFi';
-                }
-            }
-
-            showError(message) {
-                this.button.classList.remove('connecting', 'active');
-                this.button.classList.add('error');
-                this.statusText.textContent = message;
-                this.statusText.classList.add('error');
-                this.hint.textContent = 'Check WiFi connection';
-                
-                setTimeout(() => {
-                    this.resetButton();
-                    this.statusText.classList.remove('error');
-                }, 2000);
-            }
-
-            async emergencyStop() {
-                try {
-                    await fetch(`${this.baseUrl}/stop`, {
-                        method: 'GET',
-                        cache: 'no-store'
-                    });
-                } catch (error) {
-                    console.error('Emergency stop failed:', error);
-                }
-                this.resetButton();
             }
         }
 
