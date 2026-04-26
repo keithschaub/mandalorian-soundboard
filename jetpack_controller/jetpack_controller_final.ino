@@ -703,7 +703,7 @@ const char* HTML_PAGE = R"rawliteral(
 </head>
 <body>
     <h1>🚀 JETPACK CONTROL</h1>
-    <p class="subtitle">Mandalorian Jetpack v2.1</p>
+    <p class="subtitle">Mandalorian Jetpack v2.2</p>
     
     <div class="status-box">
         <div class="status-label">STATUS</div>
@@ -1002,7 +1002,7 @@ void setup() {
   
   Serial.println();
   Serial.println("========================================");
-  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.1");
+  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.2");
   Serial.println("========================================");
   Serial.println();
   
