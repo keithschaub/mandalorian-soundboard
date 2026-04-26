@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.6 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.7 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.6</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.7</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1229,9 +1229,6 @@
                 this.button = null;
                 this.statusText = null;
                 this.hint = null;
-                this.pollInterval = null;
-                this.pollTimeout = null;
-                this.soundTriggered = false;
                 this.init();
             }
 
@@ -1276,59 +1273,6 @@
                     this.statusText.textContent = 'Ready';
                     this.hint.textContent = '';
                 }, 1000);
-
-                // Start polling for active state to trigger rocket sound
-                this.startPolling();
-            }
-
-            startPolling() {
-                // Don't start a second poll if one is already running
-                if (this.pollInterval) return;
-
-                this.soundTriggered = false;
-                console.log('[Jetpack] Starting status polling for rocket sound...');
-
-                this.pollInterval = setInterval(async () => {
-                    try {
-                        const response = await fetch(`${this.esp32Url}/status`, {
-                            method: 'GET',
-                            signal: AbortSignal.timeout(200)
-                        });
-                        const data = await response.json();
-
-                        if (data.state === 'active' && !this.soundTriggered) {
-                            this.soundTriggered = true;
-                            console.log('[Jetpack] Active detected — playing rocket sound');
-                            if (window.soundBoard && window.soundBoard.sounds['Mando_rocket_sequence']) {
-                                const audio = window.soundBoard.sounds['Mando_rocket_sequence'];
-                                audio.currentTime = 0;
-                                audio.volume = window.soundBoard.currentVolume;
-                                audio.play().catch(e => console.error('[Jetpack] Rocket sound failed:', e));
-                            }
-                            this.stopPolling();
-                        }
-                    } catch (e) {
-                        // ESP32 unreachable — silent fail, keep trying
-                    }
-                }, 250);
-
-                // Safety timeout — stop polling after 60 seconds no matter what
-                this.pollTimeout = setTimeout(() => {
-                    console.log('[Jetpack] Polling timeout — stopping');
-                    this.stopPolling();
-                }, 60000);
-            }
-
-            stopPolling() {
-                if (this.pollInterval) {
-                    clearInterval(this.pollInterval);
-                    this.pollInterval = null;
-                }
-                if (this.pollTimeout) {
-                    clearTimeout(this.pollTimeout);
-                    this.pollTimeout = null;
-                }
-                console.log('[Jetpack] Polling stopped');
             }
         }
 
