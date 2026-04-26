@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mandalorian">
-    <title>Mandalorian Soundboard v5.9.7 - iPhone</title>
+    <title>Mandalorian Soundboard v5.9.8 - iPhone</title>
     <meta name="description" content="Ultra-simple Mandalorian soundboard for costume performances - Works offline">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -705,7 +705,7 @@
     <div id="soundboardScreen" class="soundboard-screen" style="display: none;">
         <div class="offline-indicator" id="offlineIndicator">📴 OFFLINE MODE</div>
         
-        <h1 class="app-title">🪖 MANDALORIAN v5.9.7</h1>
+        <h1 class="app-title">🪖 MANDALORIAN v5.9.8</h1>
     
     <div class="color-legend" id="colorLegend" style="display: flex;">
         <div class="legend-item">🔵 MANDO</div>
@@ -1280,6 +1280,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             window.soundBoard = new SoundBoard();
             window.jetpackController = new JetpackController();
+
+            // Listen for rocket trigger from ESP32 popup tab
+            window.addEventListener('message', (e) => {
+                if (e.data === 'play-rocket' && window.soundBoard && window.soundBoard.sounds['Mando_rocket_sequence']) {
+                    const audio = window.soundBoard.sounds['Mando_rocket_sequence'];
+                    audio.currentTime = 0;
+                    audio.volume = window.soundBoard.currentVolume;
+                    audio.play().catch(err => console.error('[Rocket] Play failed:', err));
+                }
+            });
         });
 
         // Prevent zoom on double tap (iOS)
