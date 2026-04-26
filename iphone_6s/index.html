@@ -947,7 +947,8 @@
                     'No droids', 'Great', 'Thank you', 'Yes', "Don't touch anything",
                     'Do not self destruct', 'I could use a crew', "I don't belong here",
                     'Where do you live', 'Why so slow', 'You want some soup',
-                    'Grogu Cooing', 'Grogu giggling', 'Grogu YES', 'Grogu NO', 'Grogu bad baby'
+                    'Grogu Cooing', 'Grogu giggling', 'Grogu YES', 'Grogu NO', 'Grogu bad baby',
+                    'Mando_rocket_sequence'
                 ];
 
                 soundFiles.forEach(soundId => {
@@ -1228,6 +1229,9 @@
                 this.button = null;
                 this.statusText = null;
                 this.hint = null;
+                this.pollInterval = null;
+                this.pollTimeout = null;
+                this.soundTriggered = false;
                 this.init();
             }
 
@@ -1272,6 +1276,59 @@
                     this.statusText.textContent = 'Ready';
                     this.hint.textContent = '';
                 }, 1000);
+
+                // Start polling for active state to trigger rocket sound
+                this.startPolling();
+            }
+
+            startPolling() {
+                // Don't start a second poll if one is already running
+                if (this.pollInterval) return;
+
+                this.soundTriggered = false;
+                console.log('[Jetpack] Starting status polling for rocket sound...');
+
+                this.pollInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${this.esp32Url}/status`, {
+                            method: 'GET',
+                            signal: AbortSignal.timeout(200)
+                        });
+                        const data = await response.json();
+
+                        if (data.state === 'active' && !this.soundTriggered) {
+                            this.soundTriggered = true;
+                            console.log('[Jetpack] Active detected — playing rocket sound');
+                            if (window.soundBoard && window.soundBoard.sounds['Mando_rocket_sequence']) {
+                                const audio = window.soundBoard.sounds['Mando_rocket_sequence'];
+                                audio.currentTime = 0;
+                                audio.volume = window.soundBoard.currentVolume;
+                                audio.play().catch(e => console.error('[Jetpack] Rocket sound failed:', e));
+                            }
+                            this.stopPolling();
+                        }
+                    } catch (e) {
+                        // ESP32 unreachable — silent fail, keep trying
+                    }
+                }, 250);
+
+                // Safety timeout — stop polling after 60 seconds no matter what
+                this.pollTimeout = setTimeout(() => {
+                    console.log('[Jetpack] Polling timeout — stopping');
+                    this.stopPolling();
+                }, 60000);
+            }
+
+            stopPolling() {
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
+                }
+                if (this.pollTimeout) {
+                    clearTimeout(this.pollTimeout);
+                    this.pollTimeout = null;
+                }
+                console.log('[Jetpack] Polling stopped');
             }
         }
 

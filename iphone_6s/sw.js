@@ -1,5 +1,5 @@
 // Enhanced Service Worker for offline functionality - iPhone 6s version
-const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.9.5';
+const CACHE_NAME = 'mandalorian-soundboard-iphone-v5.9.6';
 
 // ESP32 Jetpack Controller IP - these requests should NEVER be cached
 const JETPACK_IP = '192.168.4.1';
@@ -29,7 +29,8 @@ const urlsToCache = [
   BASE_PATH + '/Sounds/Grogu giggling.mp3',
   BASE_PATH + '/Sounds/Grogu YES.mp3',
   BASE_PATH + '/Sounds/Grogu NO.mp3',
-  BASE_PATH + '/Sounds/Grogu bad baby.mp3'
+  BASE_PATH + '/Sounds/Grogu bad baby.mp3',
+  BASE_PATH + '/Sounds/Mando_rocket_sequence.mp3'
 ];
 
 // Install event - cache all resources
