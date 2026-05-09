@@ -1,5 +1,5 @@
 /*
- * Mandalorian Jetpack Controller FINAL v2.2
+ * Mandalorian Jetpack Controller FINAL v2.3
  * 
  * ESP32 WiFi Access Point + HTTP Server for jetpack effect control
  * Controls water pumps + NeoPixel LED exhaust effect for realistic jetpack
@@ -62,6 +62,10 @@
 const char* AP_SSID = "MandalorianJetpack";
 const char* AP_PASSWORD = "thisIsTheWay";  // Min 8 characters
 
+// ============== TEST MODE ==============
+// Comment out the line below to re-enable pumps for live operation
+#define PUMPS_DISABLED
+
 // ============== PUMP CONFIGURATION ==============
 // PUMP 1 (Motor A on L298N)
 const int PUMP1_IN1 = 23;   // ESP32 GPIO 23 → L298N IN1 (active control)
@@ -72,8 +76,8 @@ const int PUMP2_IN3 = 19;   // ESP32 GPIO 19 → L298N IN3 (active control)
 const int PUMP2_IN4 = 18;   // ESP32 GPIO 18 → L298N IN4 (adjacent to GPIO 19)
 
 // Timing
-const unsigned long pumpOnTime = 5000;   // 5 seconds pump ON
-const unsigned long LED_START_DELAY = 2000;  // LED starts 2 seconds after pump
+const unsigned long pumpOnTime = 12000;  // 12 seconds pump ON
+const unsigned long LED_START_DELAY = 8000;  // LED starts 8 seconds after pump (fog rise time)
 
 // ============== LED CONFIGURATION ==============
 #define LED_PIN     21         // ESP32 GPIO 21 for NeoPixel data
@@ -241,22 +245,24 @@ void allOff() {
 // ================== PUMP CONTROL =================
 
 void startPumps() {
+#ifndef PUMPS_DISABLED
   digitalWrite(PUMP1_IN1, HIGH);
   digitalWrite(PUMP1_IN2, LOW);
   digitalWrite(PUMP2_IN3, HIGH);
   digitalWrite(PUMP2_IN4, LOW);
-  
+#endif
   pumpIsOn = true;
   pumpStartTime = millis();
   Serial.println("[PUMP] ON (" + String(pumpOnTime / 1000.0, 1) + "s) - FORWARD");
 }
 
 void stopPumps() {
+#ifndef PUMPS_DISABLED
   digitalWrite(PUMP1_IN1, LOW);
   digitalWrite(PUMP1_IN2, LOW);
   digitalWrite(PUMP2_IN3, LOW);
   digitalWrite(PUMP2_IN4, LOW);
-  
+#endif
   pumpIsOn = false;
   Serial.println("[PUMP] OFF");
 }
@@ -703,7 +709,7 @@ const char* HTML_PAGE = R"rawliteral(
 </head>
 <body>
     <h1>🚀 JETPACK CONTROL</h1>
-    <p class="subtitle">Mandalorian Jetpack v2.2</p>
+    <p class="subtitle">Mandalorian Jetpack v2.3</p>
     
     <div class="status-box">
         <div class="status-label">STATUS</div>
@@ -876,10 +882,12 @@ const char* POPUP_PAGE = R"rawliteral(
             document.getElementById('activateBtn').disabled = true;
             document.getElementById('status').textContent = 'ACTIVATING...';
             
-            // Tell soundboard tab to play the rocket sound (file already cached on phone)
-            if (window.opener) {
-                window.opener.postMessage('play-rocket', '*');
-            }
+            // Tell soundboard tab to play the rocket sound after fog rise delay
+            setTimeout(function() {
+                if (window.opener) {
+                    window.opener.postMessage('play-rocket', '*');
+                }
+            }, 8000);
             
             fetch('/activate')
                 .then(r => r.json())
@@ -1002,7 +1010,7 @@ void setup() {
   
   Serial.println();
   Serial.println("========================================");
-  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.2");
+  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.3");
   Serial.println("========================================");
   Serial.println();
   
@@ -1021,7 +1029,7 @@ void setup() {
   Serial.println("  Pump 1: IN1=GPIO" + String(PUMP1_IN1) + ", IN2=GPIO" + String(PUMP1_IN2));
   Serial.println("  Pump 2: IN3=GPIO" + String(PUMP2_IN3) + ", IN4=GPIO" + String(PUMP2_IN4));
   Serial.println("  Pump ON time: " + String(pumpOnTime / 1000.0, 1) + " seconds");
-  Serial.println("  LED start delay: " + String(LED_START_DELAY / 1000.0, 1) + " seconds");
+  Serial.println("  LED/Sound start delay: " + String(LED_START_DELAY / 1000.0, 1) + " seconds (fog rise time)");
   Serial.println();
   
   // LED setup
