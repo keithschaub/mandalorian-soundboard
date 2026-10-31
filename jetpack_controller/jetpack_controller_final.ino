@@ -1,5 +1,5 @@
 /*
- * Mandalorian Jetpack Controller FINAL v2.3
+ * Mandalorian Jetpack Controller FINAL v2.4
  * 
  * ESP32 WiFi Access Point + HTTP Server for jetpack effect control
  * Controls water pumps + NeoPixel LED exhaust effect for realistic jetpack
@@ -40,7 +40,7 @@
  *   2. Connect phone/laptop to WiFi: "MandalorianJetpack"
  *   3. Password: "thisIsTheWay"
  *   4. Open browser: http://192.168.4.1
- *   5. Click ACTIVATE from iPhone soundboard app (v5.9.6)
+ *   5. Click ACTIVATE from iPhone soundboard app (v5.9.9)
  * 
  * API ENDPOINTS:
  *   GET /           - Test page with button
@@ -709,7 +709,7 @@ const char* HTML_PAGE = R"rawliteral(
 </head>
 <body>
     <h1>🚀 JETPACK CONTROL</h1>
-    <p class="subtitle">Mandalorian Jetpack v2.3</p>
+    <p class="subtitle">Mandalorian Jetpack v2.4</p>
     
     <div class="status-box">
         <div class="status-label">STATUS</div>
@@ -882,12 +882,11 @@ const char* POPUP_PAGE = R"rawliteral(
             document.getElementById('activateBtn').disabled = true;
             document.getElementById('status').textContent = 'ACTIVATING...';
             
-            // Tell soundboard tab to play the rocket sound after fog rise delay
-            setTimeout(function() {
-                if (window.opener) {
-                    window.opener.postMessage('play-rocket', '*');
-                }
-            }, 8000);
+            // Must be sent during the tap or iOS Safari blocks playback.
+            // The rocket mp3 starts with 8s of silence to match LED_START_DELAY.
+            if (window.opener) {
+                window.opener.postMessage('play-rocket', '*');
+            }
             
             fetch('/activate')
                 .then(r => r.json())
@@ -1010,7 +1009,7 @@ void setup() {
   
   Serial.println();
   Serial.println("========================================");
-  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.3");
+  Serial.println("  MANDALORIAN JETPACK CONTROLLER v2.4");
   Serial.println("========================================");
   Serial.println();
   
