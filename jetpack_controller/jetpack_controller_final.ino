@@ -64,7 +64,7 @@ const char* AP_PASSWORD = "thisIsTheWay";  // Min 8 characters
 
 // ============== TEST MODE ==============
 // Comment out the line below to re-enable pumps for live operation
-#define PUMPS_DISABLED
+// #define PUMPS_DISABLED
 
 // ============== PUMP CONFIGURATION ==============
 // PUMP 1 (Motor A on L298N)
