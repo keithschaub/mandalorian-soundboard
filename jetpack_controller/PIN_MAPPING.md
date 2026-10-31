@@ -66,6 +66,19 @@
 | +12V (VS) | PS1 +6V (4× AA) | Motor supply voltage |
 | GND       | PS1 GND + ESP32 GND | Common ground — MUST be tied together |
 
+### Power Wiring — Verified Working (2026-10-31)
+
+![Correct power wiring](photos/power_wiring_correct_2026-10-31.jpg)
+
+| From | To | Wire |
+|------|----|------|
+| External supply + | ESP32 breakout **V+** (bottom-left screw terminal) | White |
+| External supply − | ESP32 breakout **V−** (bottom-left screw terminal) | Black |
+| ESP32 breakout — **bottom two holes**, left green terminal block | L298N **+12V** and **GND** | Red (+) / Black (−) |
+
+> Red L298N power LED lit = jumpers in the right holes. If the L298N reads 0V,  
+> the jumpers are in the wrong header pins. Supply set to ~8V.
+
 ---
 
 ## NeoPixel Ring (16 LED)
